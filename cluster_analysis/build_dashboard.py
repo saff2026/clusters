@@ -26,8 +26,8 @@ HTML = """<!DOCTYPE html>
  .agebtn{background:#16314f;border:1px solid #2a4a6e;color:#e9eef5;border-radius:20px;padding:7px 16px;
    cursor:pointer;font-family:'Tajawal';font-size:13px;font-weight:700}
  .agebtn.on{background:#ffd166;color:#0a3d62;border-color:#ffd166}
- .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
- .kpi{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:15px 16px}
+ .kpis{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+ .kpi{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:15px 22px;min-width:220px}
  .kpi .n{font-size:30px;font-weight:800;color:#ffd166;line-height:1.1}
  .kpi .l{font-size:12.5px;color:#9fb6d0;margin-top:4px}
  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -96,8 +96,7 @@ function render(){
   const groups=new Set(rows.filter(r=>r.count>0).map(r=>r.group)).size;
   const regions=new Set(rows.filter(r=>r.count>0).map(r=>r.region)).size;
   document.getElementById('kpis').innerHTML=
-    kpi(total, curAge==='الكل'?'إجمالي المشاركات (كل الفئات)':'عدد الفرق — '+curAge)+
-    kpi(cities,'مدن ممثّلة')+kpi(groups,'مجموعات فيها فرق')+kpi(regions,'مناطق');
+    kpi(total, curAge==='الكل'?'مجموع الفرق (كل الفئات)':'مجموع الفرق — '+curAge);
   // by age (always all)
   const at=ageTotals();const ao={};AGES.forEach(a=>ao[a]=at[a]);
   barChart(document.getElementById('byage'),ao,{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});
