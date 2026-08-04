@@ -53,8 +53,8 @@
  <div class="ages" id="ages"></div>
  <div class="kpis" id="kpis"></div>
  <div class="grid">
-  <div class="card"><h3>الفرق حسب الفئة العمرية</h3><div id="byage"></div></div>
-  <div class="card"><h3 id="regh">الفرق حسب المنطقة</h3><div id="byregion"></div></div>
+  <div class="card" id="agecard"><h3>الفرق حسب الفئة العمرية</h3><div id="byage"></div></div>
+  <div class="card" id="regcard"><h3 id="regh">الفرق حسب المنطقة</h3><div id="byregion"></div></div>
  </div>
  <div class="card" id="grpcard"><h3 id="grph">الفرق حسب المجموعة</h3><div id="bygroup"></div></div>
  <div class="card"><h3 id="cityh">الفرق حسب المدينة</h3>
@@ -90,9 +90,12 @@ function render(){
   const regions=new Set(rows.filter(r=>r.count>0).map(r=>r.region)).size;
   document.getElementById('kpis').innerHTML=
     kpi(total, curAge==='الكل'?'مجموع الفرق (كل الفئات)':'مجموع الفرق — '+curAge);
-  // by age (always all)
-  const at=ageTotals();const ao={};AGES.forEach(a=>ao[a]=at[a]);
-  barChart(document.getElementById('byage'),ao,{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});
+  // by age (يظهر فقط في صفحة الكل)
+  const showAge=(curAge==='الكل');
+  document.getElementById('agecard').style.display=showAge?'block':'none';
+  document.getElementById('regcard').style.gridColumn=showAge?'':'1 / -1';
+  if(showAge){const at=ageTotals();const ao={};AGES.forEach(a=>ao[a]=at[a]);
+    barChart(document.getElementById('byage'),ao,{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});}
   // by region
   document.getElementById('regh').textContent='الفرق حسب المنطقة'+(curAge==='الكل'?'':' — '+curAge);
   barChart(document.getElementById('byregion'),agg(rows,'region'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'});
