@@ -100,15 +100,16 @@ function render(){
   const regions=new Set(rows.filter(r=>r.count>0).map(r=>r.region)).size;
   document.getElementById('kpis').innerHTML=
     kpi(total, curAge==='الكل'?'مجموع الفرق (كل الفئات)':'مجموع الفرق — '+curAge);
-  // by age (يظهر فقط في صفحة الكل)
+  // مخططا الفئة العمرية والمنطقة يظهران فقط في صفحة الكل
   const showAge=(curAge==='الكل');
   document.getElementById('agecard').style.display=showAge?'block':'none';
-  document.getElementById('regcard').style.gridColumn=showAge?'':'1 / -1';
-  if(showAge){const at=ageTotals();const ao={};AGES.forEach(a=>ao[a]=at[a]);
-    barChart(document.getElementById('byage'),ao,{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});}
-  // by region
-  document.getElementById('regh').textContent='الفرق حسب المنطقة'+(curAge==='الكل'?'':' — '+curAge);
-  barChart(document.getElementById('byregion'),agg(rows,'region'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'});
+  document.getElementById('regcard').style.display=showAge?'block':'none';
+  if(showAge){
+    const at=ageTotals();const ao={};AGES.forEach(a=>ao[a]=at[a]);
+    barChart(document.getElementById('byage'),ao,{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});
+    document.getElementById('regh').textContent='الفرق حسب المنطقة';
+    barChart(document.getElementById('byregion'),agg(rows,'region'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'});
+  }
   // by group (يُخفى في صفحة الكل لأن التجميعات تختلف بين الفئات)
   document.getElementById('grpcard').style.display=(curAge==='الكل')?'none':'block';
   if(curAge!=='الكل'){document.getElementById('grph').textContent='الفرق حسب المجموعة — '+curAge;
