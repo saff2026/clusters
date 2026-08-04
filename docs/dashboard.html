@@ -91,6 +91,25 @@ function barChart(el,obj,{sort=true,limit=0,color,sub,wide,onClick}={}){
   if(onClick)el.querySelectorAll('.bar.clk').forEach(b=>b.onclick=()=>onClick(b.getAttribute('data-k')));
 }
 function ageTotals(){const m={};AGES.forEach(a=>m[a]=0);DATA.rows.forEach(r=>m[r.age]=(m[r.age]||0)+r.count);return m;}
+const TARGET=6;
+function groupChart(el,arr){
+  arr.sort((a,b)=>b.count-a.count);
+  const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
+  el.innerHTML=arr.length?arr.map(a=>{
+    const ok=a.count>=TARGET;
+    const col=ok?'linear-gradient(90deg,#1a9850,#2ecc71)':'linear-gradient(90deg,#c0392b,#e74c3c)';
+    const note=ok?('✓ مكتمل'+(a.count>TARGET?' (+'+(a.count-TARGET)+')':'')):('باقي '+(TARGET-a.count)+' ليصير '+TARGET);
+    return '<div class="bar wide clk" data-k="'+a.group.replace(/"/g,'&quot;')+'">'+
+      '<div class="lab"><b>'+a.group+'</b>'+
+        '<div class="sub">('+a.cities+')</div>'+
+        '<div class="sub" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-weight:700">'+note+'</div></div>'+
+      '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
+      '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';
+  }).join(''):'<div class="muted">لا مجموعات.</div>';
+  el.querySelectorAll('.bar.clk').forEach(b=>b.onclick=()=>{groupFilter=b.getAttribute('data-k');
+    document.getElementById('csearch').value='';renderTable();
+    document.getElementById('cityh').scrollIntoView({behavior:'smooth',block:'start'});});
+}
 function render(){
   const rows=rowsFor(curAge);
   // KPIs
@@ -112,12 +131,11 @@ function render(){
   }
   // by group (يُخفى في صفحة الكل لأن التجميعات تختلف بين الفئات)
   document.getElementById('grpcard').style.display=(curAge==='الكل')?'none':'block';
-  if(curAge!=='الكل'){document.getElementById('grph').textContent='الفرق حسب المجموعة — '+curAge;
-    const gc={};rows.forEach(r=>{(gc[r.group]=gc[r.group]||[]).push(r.city);});
-    const sub={};Object.keys(gc).forEach(g=>sub[g]=[...new Set(gc[g])].join('، '));
-    barChart(document.getElementById('bygroup'),agg(rows,'group'),{sub,wide:true,
-      onClick:g=>{groupFilter=g;document.getElementById('csearch').value='';renderTable();
-        document.getElementById('cityh').scrollIntoView({behavior:'smooth',block:'start'});}});}
+  if(curAge!=='الكل'){document.getElementById('grph').textContent='الفرق حسب المجموعة — '+curAge+' (المطلوب '+TARGET+' لكل مجموعة)';
+    const gs={};rows.forEach(r=>{if(!gs[r.group])gs[r.group]={group:r.group,count:0,cset:new Set()};
+      gs[r.group].count+=r.count;gs[r.group].cset.add(r.city);});
+    const arr=Object.values(gs).map(g=>({group:g.group,count:g.count,cities:[...g.cset].join('، ')}));
+    groupChart(document.getElementById('bygroup'),arr);}
   document.getElementById('cityh').textContent='الفرق حسب المدينة'+(curAge==='الكل'?'':' — '+curAge);
   renderTable();
 }
