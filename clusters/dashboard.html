@@ -56,11 +56,11 @@
   <div class="card"><h3>الفرق حسب الفئة العمرية</h3><div id="byage"></div></div>
   <div class="card"><h3 id="regh">الفرق حسب المنطقة</h3><div id="byregion"></div></div>
  </div>
- <div class="card"><h3 id="grph">الفرق حسب المجموعة</h3><div id="bygroup"></div></div>
+ <div class="card" id="grpcard"><h3 id="grph">الفرق حسب المجموعة</h3><div id="bygroup"></div></div>
  <div class="card"><h3 id="cityh">الفرق حسب المدينة</h3>
   <input class="search" id="csearch" placeholder="ابحث عن مدينة أو مجموعة أو منطقة...">
   <div class="tblwrap"><table id="citytbl"><thead><tr>
-   <th data-k="city">المدينة</th><th data-k="region">المنطقة</th><th data-k="group">المجموعة</th><th data-k="count">الفرق</th>
+   <th data-k="city">المدينة</th><th data-k="region">المنطقة</th><th data-k="group" class="grpcol">المجموعة</th><th data-k="count">الفرق</th>
   </tr></thead><tbody></tbody></table></div>
  </div>
 </div>
@@ -96,9 +96,10 @@ function render(){
   // by region
   document.getElementById('regh').textContent='الفرق حسب المنطقة'+(curAge==='الكل'?'':' — '+curAge);
   barChart(document.getElementById('byregion'),agg(rows,'region'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'});
-  // by group
-  document.getElementById('grph').textContent='الفرق حسب المجموعة'+(curAge==='الكل'?'':' — '+curAge);
-  barChart(document.getElementById('bygroup'),agg(rows,'group'),{});
+  // by group (يُخفى في صفحة الكل لأن التجميعات تختلف بين الفئات)
+  document.getElementById('grpcard').style.display=(curAge==='الكل')?'none':'block';
+  if(curAge!=='الكل'){document.getElementById('grph').textContent='الفرق حسب المجموعة — '+curAge;
+    barChart(document.getElementById('bygroup'),agg(rows,'group'),{});}
   document.getElementById('cityh').textContent='الفرق حسب المدينة'+(curAge==='الكل'?'':' — '+curAge);
   renderTable();
 }
@@ -106,17 +107,20 @@ function agg(rows,key){const m={};rows.forEach(r=>{if(r.count)m[r[key]]=(m[r[key
 function kpi(n,l){return '<div class="kpi"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
 let sortK='count',sortDir=-1;
 function renderTable(){
+  const showG=curAge!=='الكل';
+  const gc=document.querySelector('#citytbl th.grpcol');if(gc)gc.style.display=showG?'':'none';
   const q=(document.getElementById('csearch').value||'').trim();
   let rows=rowsFor(curAge).filter(r=>r.count>0);
-  if(curAge==='الكل'){ // aggregate per city across ages
-    const m={};rows.forEach(r=>{const k=r.city;if(!m[k])m[k]={city:r.city,region:r.region,group:r.group,count:0};m[k].count+=r.count;});
+  if(!showG){ // aggregate per city across ages (بدون مجموعة)
+    const m={};rows.forEach(r=>{const k=r.city;if(!m[k])m[k]={city:r.city,region:r.region,count:0};m[k].count+=r.count;});
     rows=Object.values(m);
   }
-  if(q)rows=rows.filter(r=>(r.city+r.region+r.group).indexOf(q)>=0);
-  rows.sort((a,b)=>{const x=a[sortK],y=b[sortK];return (x>y?1:x<y?-1:0)*sortDir;});
+  if(q)rows=rows.filter(r=>(r.city+r.region+(r.group||'')).indexOf(q)>=0);
+  const sk=(!showG&&sortK==='group')?'count':sortK;
+  rows.sort((a,b)=>{const x=a[sk],y=b[sk];return (x>y?1:x<y?-1:0)*sortDir;});
   document.querySelector('#citytbl tbody').innerHTML=rows.map(r=>
-    '<tr><td>'+r.city+'</td><td class="muted">'+r.region+'</td><td>'+r.group+'</td><td class="num">'+r.count+'</td></tr>').join('')
-    ||'<tr><td colspan="4" class="muted">لا نتائج.</td></tr>';
+    '<tr><td>'+r.city+'</td><td class="muted">'+r.region+'</td>'+(showG?'<td>'+(r.group||'')+'</td>':'')+'<td class="num">'+r.count+'</td></tr>').join('')
+    ||'<tr><td colspan="'+(showG?4:3)+'" class="muted">لا نتائج.</td></tr>';
 }
 document.querySelectorAll('#citytbl th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;
   if(sortK===k)sortDir*=-1;else{sortK=k;sortDir=(k==='count')?-1:1;}renderTable();});
