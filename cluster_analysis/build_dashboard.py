@@ -152,7 +152,8 @@ function regionPanel(el){
     html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #1c3a5e;padding-top:10px">'+age+'</div>';
     html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
       return '<div class="bar"><div class="lab" style="width:210px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
-        ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span></div>'+
+        ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span>'+
+        (a.cities?'<div class="sub">('+a.cities+')</div>':'')+'</div>'+
         '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
         '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';}).join('');
     html+='</div>';
