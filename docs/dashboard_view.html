@@ -1,59 +1,59 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>لوحة الفِرَق المسجَّلة</title>
+<title>بيانات الفرق المسجلة — بطولات الواعدين والبراعم 26/27</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
- *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#0b1c30;color:#e9eef5}
+ *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#e9eef5}
  a{color:#7cc4ff;text-decoration:none}
- .top{background:#0a3d62;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+ .top{background:#006C35;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;
    position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.4)}
  .top h1{margin:0;font-size:19px;font-weight:800} .top .sp{flex:1}
- .btn{background:#1b6ca8;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-family:'Tajawal';
+ .btn{background:#0a7d43;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-family:'Tajawal';
    font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
- .btn:hover{background:#2980b9} .btn.g{background:#2e7d32}.btn.g:hover{background:#388e3c}
+ .btn:hover{background:#0aa257} .btn.g{background:#2e7d32}.btn.g:hover{background:#388e3c}
  .wrap{max-width:1200px;margin:0 auto;padding:18px}
  .flt{margin-bottom:14px} .flt .lab{font-size:12px;color:#9fb6d0;margin-bottom:5px;font-weight:700}
  .tabs{display:flex;flex-wrap:wrap;gap:8px}
- .tab{background:#16314f;border:1px solid #2a4a6e;color:#e9eef5;border-radius:20px;padding:6px 15px;
+ .tab{background:#0d4b32;border:1px solid #1c7a52;color:#e9eef5;border-radius:20px;padding:6px 15px;
    cursor:pointer;font-family:'Tajawal';font-size:13px;font-weight:700}
- .tab.on{background:#ffd166;color:#0a3d62;border-color:#ffd166}
- select.rgn{padding:8px 12px;border-radius:8px;border:1px solid #2a4a6e;background:#13294a;color:#fff;
+ .tab.on{background:#ffd166;color:#006C35;border-color:#ffd166}
+ select.rgn{padding:8px 12px;border-radius:8px;border:1px solid #1c7a52;background:#0b3524;color:#fff;
    font-family:'Tajawal';font-size:13px;font-weight:700;min-width:200px}
  .kpis{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0 18px}
- .kpi{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:16px 22px;flex:1;min-width:220px;text-align:center}
+ .kpi{background:#0b3524;border:1px solid #12563a;border-radius:12px;padding:16px 22px;flex:1;min-width:220px;text-align:center}
  .kpi .n{font-size:30px;font-weight:800;color:#ffd166;line-height:1.1}
  .kpi .l{font-size:12.5px;color:#9fb6d0;margin-top:4px}
  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
  @media(max-width:800px){.grid{grid-template-columns:1fr}}
- .card{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:16px;margin-bottom:16px}
+ .card{background:#0b3524;border:1px solid #12563a;border-radius:12px;padding:16px;margin-bottom:16px}
  .card h3{margin:0 0 12px;font-size:15px;color:#ffd166}
  .bar{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px}
  .bar .lab{width:130px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
- .bar .track{flex:1;background:#0b1c30;border-radius:6px;height:20px;overflow:hidden}
- .bar .fill{height:100%;background:linear-gradient(90deg,#1b6ca8,#3aa0e0);border-radius:6px;min-width:2px}
+ .bar .track{flex:1;background:#04150e;border-radius:6px;height:20px;overflow:hidden}
+ .bar .fill{height:100%;background:linear-gradient(90deg,#0a7d43,#2ecc71);border-radius:6px;min-width:2px}
  .bar .val{width:40px;text-align:center;font-weight:700;color:#ffd166}
- .bar.clk{cursor:pointer;border-radius:7px;padding:3px 5px;margin:1px -5px} .bar.clk:hover{background:#16314f}
+ .bar.clk{cursor:pointer;border-radius:7px;padding:3px 5px;margin:1px -5px} .bar.clk:hover{background:#0d4b32}
  .bar.wide .lab{width:240px;white-space:normal;text-overflow:clip}
  .lab .sub{font-size:10px;color:#7f97b3;line-height:1.35;margin-top:2px;font-weight:400}
- .chip{display:inline-block;background:#1b6ca8;color:#fff;border-radius:14px;padding:5px 13px;font-size:12px;cursor:pointer;margin-bottom:8px}
- .chip:hover{background:#2980b9}
+ .chip{display:inline-block;background:#0a7d43;color:#fff;border-radius:14px;padding:5px 13px;font-size:12px;cursor:pointer;margin-bottom:8px}
+ .chip:hover{background:#0aa257}
  table{width:100%;border-collapse:collapse;font-size:13px}
- th,td{padding:7px 9px;text-align:right;border-bottom:1px solid #1c3a5e}
- th{color:#ffd166;font-weight:700;cursor:pointer;position:sticky;top:0;background:#12283f}
- tbody tr:hover{background:#16314f}
+ th,td{padding:7px 9px;text-align:right;border-bottom:1px solid #12563a}
+ th{color:#ffd166;font-weight:700;cursor:pointer;position:sticky;top:0;background:#0b3524}
+ tbody tr:hover{background:#0d4b32}
  .tblwrap{max-height:440px;overflow:auto;border-radius:8px}
- input.search{width:100%;padding:9px 11px;border-radius:8px;border:1px solid #2a4a6e;background:#0b1c30;
+ input.search{width:100%;padding:9px 11px;border-radius:8px;border:1px solid #1c7a52;background:#04150e;
    color:#fff;font-family:'Tajawal';margin-bottom:10px}
  .muted{color:#9fb6d0;font-size:12px} .num{color:#ffd166;font-weight:700}
 </style></head><body>
 <div class="top">
- <h1>📊 لوحة الفِرَق المسجَّلة</h1>
+ <h1>بيانات الفرق المسجلة في بطولات الواعدين والبراعم لموسم 26/27</h1>
  <span class="muted" id="updated"></span>
  <span class="sp"></span>
- <label class="btn g" style="cursor:pointer">⬆️ تحديث من إكسل<input type="file" id="file" accept=".xlsx,.xls" style="display:none"></label>
- <a class="btn" href="./">🗺️ الخريطة</a>
+ 
+ 
 </div>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
@@ -139,7 +139,7 @@ function regionPanel(el){
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
     const tot=arr.reduce((s,a)=>s+a.count,0),mx=Math.max(TARGET,1,...arr.map(a=>a.count));
-    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #1c3a5e;padding-top:10px">'+age+'</div>';
+    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #12563a;padding-top:10px">'+age+'</div>';
     html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
       return '<div class="bar"><div class="lab" style="width:210px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
         ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span></div>'+
