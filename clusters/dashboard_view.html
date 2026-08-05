@@ -163,9 +163,10 @@ function render(){
   document.getElementById('agecard').style.gridColumn=showReg?'':'1 / -1';
   if(isAll){ barChart(document.getElementById('byage'),ageChartData(),{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});
     if(showReg)barChart(document.getElementById('byregion'),agg(rows,'region'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'}); }
-  // مخطط الصفة (دائمًا)
-  document.getElementById('bysifa').parentNode.style.display='block';
-  barChart(document.getElementById('bysifa'),agg(base(),'sifa'),{color:'linear-gradient(90deg,#d68910,#f5b041)'});
+  // مخطط الصفة يظهر فقط عند اختيار «كل الصفات»
+  const showSifa=(curSifa==='الكل');
+  document.getElementById('sifacard').style.display=showSifa?'block':'none';
+  if(showSifa)barChart(document.getElementById('bysifa'),agg(base(),'sifa'),{color:'linear-gradient(90deg,#d68910,#f5b041)'});
   // مخطط المجموعة (لفئة محددة فقط)
   document.getElementById('grpcard').style.display=isAll?'none':'block';
   if(!isAll){document.getElementById('grph').textContent='الفِرَق بحسب المجموعة — '+curAge+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' فِرَق لكل مجموعة)';
