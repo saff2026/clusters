@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # يبني الخريطة والداشبورد وينشرهما على فرع main داخل clusters/ ليتحدّث الرابط:
-#   https://saff2026.github.io/khitba/clusters/  (الخريطة)
-#   https://saff2026.github.io/khitba/clusters/dashboard.html  (لوحة الفرق)
+#   https://saff2026.github.io/clusters/clusters/  (الخريطة)
+#   https://saff2026.github.io/clusters/clusters/dashboard.html  (لوحة الفرق)
 set -e
 cd /home/user/khitba
 python3 cluster_analysis/build_full_map.py >/dev/null
@@ -32,4 +32,4 @@ git add clusters/index.html clusters/dashboard.html clusters/dashboard_view.html
 git commit -q -m "Update published clusters map + dashboard" || true
 git push origin main >/dev/null 2>&1
 git checkout "$DEV" >/dev/null 2>&1
-echo "نُشر: https://saff2026.github.io/khitba/clusters/ و /dashboard.html"
+echo "نُشر: https://saff2026.github.io/clusters/clusters/ و /dashboard.html"
