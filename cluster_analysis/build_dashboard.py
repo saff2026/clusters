@@ -18,6 +18,7 @@ HTML = r"""<!DOCTYPE html>
  .top{background:#0a3d62;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;
    position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.4)}
  .top h1{margin:0;font-size:19px;font-weight:800} .top .sp{flex:1}
+ .top .logo{height:46px;width:auto;display:block;flex-shrink:0}
  .btn{background:#1b6ca8;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-family:'Tajawal';
    font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
  .btn:hover{background:#2980b9} .btn.g{background:#2e7d32}.btn.g:hover{background:#388e3c}
@@ -57,6 +58,7 @@ HTML = r"""<!DOCTYPE html>
  .muted{color:#9fb6d0;font-size:12px} .num{color:#ffd166;font-weight:700}
 </style></head><body>
 <div class="top">
+ <img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()">
  <h1>📊 لوحة الفِرَق المسجَّلة</h1>
  <span class="muted" id="updated"></span>
  <span class="sp"></span>
