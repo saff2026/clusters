@@ -88,13 +88,15 @@ function structFor(age,region){
   const m={};Object.keys(STRUCT).forEach(rg=>{const s=STRUCT[rg][age];if(s)Object.keys(s).forEach(g=>{m[g]=(m[g]||[]).concat(s[g]);});});
   Object.keys(m).forEach(g=>m[g]=[...new Set(m[g])]);return m;}
 const TARGET=DATA.target||6;
-let curAge='الكل', curSifa='الكل', curRegion='الكل', groupFilter=null;
+let curAge='الكل', curSifas=[], curRegion='الكل', groupFilter=null;
+function sifaMatch(r){return curSifas.length===0||curSifas.includes(r.sifa);}
+function sifaLabel(){return curSifas.length===0?'كل الصفات':curSifas.join('، ');}
 let sortK='count', sortDir=-1;
 
 function base(){ // كل الصفوف مع فلترة الفئة والمنطقة (بدون الصفة) — للبنية
   return DATA.rows.filter(r=>(curAge==='الكل'||r.age===curAge)&&(curRegion==='الكل'||r.region===curRegion));
 }
-function filtered(){ return base().filter(r=>curSifa==='الكل'||r.sifa===curSifa); }
+function filtered(){ return base().filter(sifaMatch); }
 function agg(rows,key){const m={};rows.forEach(r=>{if(r.count)m[r[key]]=(m[r[key]]||0)+r.count;});return m;}
 
 function barChart(el,obj,{sort=true,color}={}){
@@ -107,7 +109,7 @@ function barChart(el,obj,{sort=true,color}={}){
     '<div class="val">'+v+'</div></div>').join(''):'<div class="muted">لا توجد فِرَق.</div>';
 }
 function ageChartData(){const m={};DATA.ages.forEach(a=>m[a]=0);
-  base().filter(r=>curSifa==='الكل'||r.sifa===curSifa).forEach(r=>m[r.age]=(m[r.age]||0)+r.count);return m;}
+  base().filter(sifaMatch).forEach(r=>m[r.age]=(m[r.age]||0)+r.count);return m;}
 function groupChart(el){
   // البنية من التقسيمة (كل المجموعات حتى الفارغة) — العدّ حسب الفلاتر
   const struct=structFor(curAge,curRegion);
@@ -132,10 +134,10 @@ function groupChart(el){
 }
 function kpi(n,l){return '<div class="kpi"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
 function regionPanel(el){
-  let html='<h3>مجموعات '+curRegion+' حسب الفئة العمرية'+(curSifa==='الكل'?'':' — '+curSifa)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
+  let html='<h3>مجموعات '+curRegion+' حسب الفئة العمرية'+(curSifas.length?' — '+curSifas.join('، '):'')+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
   DATA.ages.forEach(age=>{
     const struct=(STRUCT[curRegion]&&STRUCT[curRegion][age])||{};
-    const cnt={};DATA.rows.filter(r=>r.region===curRegion&&r.age===age&&(curSifa==='الكل'||r.sifa===curSifa)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
+    const cnt={};DATA.rows.filter(r=>r.region===curRegion&&r.age===age&&sifaMatch(r)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
     let arr=Object.keys(struct).map(g=>({group:g,count:cnt[g]||0,cities:struct[g].join('، ')}));
     Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
     if(!arr.length)return;
@@ -155,7 +157,7 @@ function regionPanel(el){
 function render(){
   const rows=filtered();
   const total=rows.reduce((s,r)=>s+r.count,0);
-  const parts=[curAge==='الكل'?'جميع الفئات':curAge, curSifa==='الكل'?'كل الصفات':curSifa, curRegion==='الكل'?'كل المناطق':curRegion];
+  const parts=[curAge==='الكل'?'جميع الفئات':curAge, sifaLabel(), curRegion==='الكل'?'كل المناطق':curRegion];
   document.getElementById('kpis').innerHTML=kpi(total,'مجموع الفِرَق — '+parts.join(' · '));
   const isAll=(curAge==='الكل');
   // المخططات العلوية (فئة + منطقة) تظهر في صفحة الكل فقط
@@ -167,7 +169,7 @@ function render(){
   if(isAll){ barChart(document.getElementById('byage'),ageChartData(),{sort:false,color:'linear-gradient(90deg,#8e44ad,#c874f0)'});
     if(showReg)barChart(document.getElementById('byregion'),agg(rows,'region'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'}); }
   // مخطط الصفة يظهر فقط عند اختيار «كل الصفات»
-  const showSifa=(curSifa==='الكل');
+  const showSifa=(curSifas.length===0);
   document.getElementById('sifacard').style.display=showSifa?'block':'none';
   if(showSifa)barChart(document.getElementById('bysifa'),agg(base(),'sifa'),{color:'linear-gradient(90deg,#d68910,#f5b041)'});
   // مخطط المجموعة (لفئة محددة فقط)
@@ -203,9 +205,18 @@ document.getElementById('csearch').oninput=()=>{groupFilter=null;renderTable();}
 
 function tabs(el,items,cur,fn){el.innerHTML='';items.forEach(it=>{const b=document.createElement('button');
   b.className='tab'+(it===cur?' on':'');b.textContent=it;b.onclick=()=>fn(it);el.appendChild(b);});}
+function sifaTabs(){ // فلتر الصفة متعدّد الاختيار: «الكل» يمسح التحديد، وكل صفة تُبدَّل بالضغط
+  const el=document.getElementById('sifaT');el.innerHTML='';
+  const mk=(txt,on,fn)=>{const b=document.createElement('button');b.className='tab'+(on?' on':'');
+    b.textContent=txt;b.onclick=fn;el.appendChild(b);};
+  mk('الكل',curSifas.length===0,()=>{curSifas=[];buildFilters();render();});
+  DATA.sifas.forEach(s=>mk(s,curSifas.includes(s),()=>{
+    const i=curSifas.indexOf(s);if(i>=0)curSifas.splice(i,1);else curSifas.push(s);
+    buildFilters();render();}));
+}
 function buildFilters(){
   tabs(document.getElementById('ageT'),['الكل',...DATA.ages],curAge,a=>{curAge=a;groupFilter=null;buildFilters();render();});
-  tabs(document.getElementById('sifaT'),['الكل',...DATA.sifas],curSifa,s=>{curSifa=s;buildFilters();render();});
+  sifaTabs();
   const rg=document.getElementById('rgn');
   rg.innerHTML='<option value="الكل">كل المناطق</option>'+DATA.regions.map(r=>'<option'+(r===curRegion?' selected':'')+'>'+r+'</option>').join('');
   rg.onchange=()=>{curRegion=rg.value;groupFilter=null;buildFilters();render();};
@@ -232,7 +243,7 @@ if(_fileInp)_fileInp.onchange=e=>{const f=e.target.files[0];if(!f)return;
     ages.sort((x,y)=>(+x.replace(/\D/g,''))-(+y.replace(/\D/g,'')));
     DATA={rows,ages,sifas:['هواة','نادي','أكاديمية'].filter(s=>sifset.has(s)),
       regions:[...regset].filter(r=>r!=='غير محدد').sort().concat(regset.has('غير محدد')?['غير محدد']:[]),target:TARGET};
-    curAge='الكل';curSifa='الكل';curRegion='الكل';groupFilter=null;buildFilters();render();
+    curAge='الكل';curSifas=[];curRegion='الكل';groupFilter=null;buildFilters();render();
     document.getElementById('updated').textContent='حُدِّثت البيانات من ملفك';
   }catch(err){alert('تعذّر قراءة الملف: '+err.message);}};
   rd.readAsArrayBuffer(f);};
