@@ -216,7 +216,8 @@ function buildFilters(){
 }
 // ===== تحديث من إكسل (يعيد البناء من صفحة بيانات التسجيل) =====
 const CANON={'جيزان':'جازان'}, SIFA={'هواة':'هواة','اكاديمية':'أكاديمية','اكاديمة':'أكاديمية','نادي':'نادي','نالدي خاص':'نادي'};
-document.getElementById('file').onchange=e=>{const f=e.target.files[0];if(!f)return;
+const _fileInp=document.getElementById('file');
+if(_fileInp)_fileInp.onchange=e=>{const f=e.target.files[0];if(!f)return;
   const rd=new FileReader();rd.onload=ev=>{try{
     const wb=XLSX.read(ev.target.result,{type:'array'});
     const ws=wb.Sheets['بيانات التسجيل'];if(!ws){alert('لم أجد صفحة «بيانات التسجيل»');return;}
@@ -248,3 +249,25 @@ HTML = HTML.replace("__REG__", json.dumps(MAPS["REG"], ensure_ascii=False))
 HTML = HTML.replace("__STRUCT__", json.dumps(MAPS["STRUCT"], ensure_ascii=False))
 open("/home/user/khitba/cluster_analysis/dashboard.html", "w", encoding="utf-8").write(HTML)
 print("saved dashboard.html", len(HTML), "bytes")
+
+# ===== نسخة العرض فقط بالهوية الخضراء للاتحاد =====
+VIEW = HTML
+VIEW = VIEW.replace("<title>لوحة الفِرَق المسجَّلة</title>",
+                    "<title>بيانات الفرق المسجلة — بطولات الواعدين والبراعم 26/27</title>")
+VIEW = VIEW.replace("<h1>📊 لوحة الفِرَق المسجَّلة</h1>",
+                    "<h1>بيانات الفرق المسجلة في بطولات الواعدين والبراعم لموسم 26/27</h1>")
+# إزالة زرّي الإكسل والخريطة (regex متين ضد اختلاف الإيموجي)
+import re as _re
+VIEW = _re.sub(r'<label class="btn g"[^>]*>.*?id="file".*?</label>', "", VIEW, flags=_re.S)
+VIEW = _re.sub(r'<a class="btn" href="\./">[^<]*</a>', "", VIEW)
+# لوح الألوان الأخضر (هوية الاتحاد)
+GREEN = {
+ "#0b1c30": "#04150e", "#0a3d62": "#006C35", "#12283f": "#0b3524",
+ "#1c3a5e": "#12563a", "#16314f": "#0d4b32", "#2a4a6e": "#1c7a52",
+ "#1b6ca8": "#0a7d43", "#2980b9": "#0aa257", "#3aa0e0": "#2ecc71",
+ "#13294a": "#0b3524", "#0a5c36": "#006C35",
+}
+for a, b in GREEN.items():
+    VIEW = VIEW.replace(a, b)
+open("/home/user/khitba/cluster_analysis/dashboard_view.html", "w", encoding="utf-8").write(VIEW)
+print("saved dashboard_view.html", len(VIEW), "bytes")
