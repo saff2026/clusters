@@ -76,6 +76,7 @@ HTML = r"""<!DOCTYPE html>
  </div>
  <div class="card" id="sifacard"><h3 id="sifah">الفِرَق بحسب صفة النادي</h3><div id="bysifa"></div></div>
  <div class="card" id="grpcard"><h3 id="grph">الفِرَق بحسب المجموعة</h3><div id="bygroup"></div></div>
+ <div class="card" id="regionPanel"></div>
 
  <div class="card"><h3 id="cityh">الفِرَق بحسب المدينة</h3>
   <div id="gfilter"></div>
@@ -87,7 +88,11 @@ HTML = r"""<!DOCTYPE html>
 </div>
 <script>
 let DATA=__DATA__;
-const C2G=__C2G__, REG=__REG__;
+const C2G=__C2G__, REG=__REG__, STRUCT=__STRUCT__;
+function structFor(age,region){
+  if(region!=='الكل')return (STRUCT[region]&&STRUCT[region][age])||{};
+  const m={};Object.keys(STRUCT).forEach(rg=>{const s=STRUCT[rg][age];if(s)Object.keys(s).forEach(g=>{m[g]=(m[g]||[]).concat(s[g]);});});
+  Object.keys(m).forEach(g=>m[g]=[...new Set(m[g])]);return m;}
 const TARGET=DATA.target||6;
 let curAge='الكل', curSifa='الكل', curRegion='الكل', groupFilter=null;
 let sortK='count', sortDir=-1;
@@ -110,11 +115,11 @@ function barChart(el,obj,{sort=true,color}={}){
 function ageChartData(){const m={};DATA.ages.forEach(a=>m[a]=0);
   base().filter(r=>curSifa==='الكل'||r.sifa===curSifa).forEach(r=>m[r.age]=(m[r.age]||0)+r.count);return m;}
 function groupChart(el){
-  // البنية: كل المجموعات ضمن الفئة/المنطقة (بغضّ النظر عن الصفة) — العدّ حسب الصفة المختارة
-  const st={}; base().forEach(r=>{if(!st[r.group])st[r.group]={cset:new Set(),count:0};st[r.group].cset.add(r.city);});
-  filtered().forEach(r=>{if(st[r.group])st[r.group].count+=r.count;});
-  let arr=Object.keys(st).map(g=>({group:g,count:st[g].count,cities:[...st[g].cset].join('، ')}));
-  arr=arr.filter(a=>a.group!=='(غير مصنّف)'||a.count>0);
+  // البنية من التقسيمة (كل المجموعات حتى الفارغة) — العدّ حسب الفلاتر
+  const struct=structFor(curAge,curRegion);
+  const cnt={};filtered().forEach(r=>{cnt[r.group]=(cnt[r.group]||0)+r.count;});
+  let arr=Object.keys(struct).map(g=>({group:g,count:cnt[g]||0,cities:struct[g].join('، ')}));
+  Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
   arr.sort((a,b)=>b.count-a.count);
   const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
   el.innerHTML=arr.length?arr.map(a=>{
@@ -132,6 +137,26 @@ function groupChart(el){
     document.getElementById('cityh').scrollIntoView({behavior:'smooth',block:'start'});});
 }
 function kpi(n,l){return '<div class="kpi"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
+function regionPanel(el){
+  let html='<h3>مجموعات '+curRegion+' حسب الفئة العمرية'+(curSifa==='الكل'?'':' — '+curSifa)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
+  DATA.ages.forEach(age=>{
+    const struct=(STRUCT[curRegion]&&STRUCT[curRegion][age])||{};
+    const cnt={};DATA.rows.filter(r=>r.region===curRegion&&r.age===age&&(curSifa==='الكل'||r.sifa===curSifa)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
+    let arr=Object.keys(struct).map(g=>({group:g,count:cnt[g]||0,cities:struct[g].join('، ')}));
+    Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
+    if(!arr.length)return;
+    arr.sort((a,b)=>b.count-a.count);
+    const tot=arr.reduce((s,a)=>s+a.count,0),mx=Math.max(TARGET,1,...arr.map(a=>a.count));
+    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #1c3a5e;padding-top:10px">'+age+' — '+tot+' فريق</div>';
+    html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
+      return '<div class="bar"><div class="lab" style="width:210px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
+        ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span></div>'+
+        '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
+        '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';}).join('');
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
 function render(){
   const rows=filtered();
   const total=rows.reduce((s,r)=>s+r.count,0);
@@ -153,6 +178,9 @@ function render(){
   document.getElementById('grpcard').style.display=isAll?'none':'block';
   if(!isAll){document.getElementById('grph').textContent='الفِرَق بحسب المجموعة — '+curAge+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' فِرَق لكل مجموعة)';
     groupChart(document.getElementById('bygroup'));}
+  // صفحة المنطقة: كل الفئات ومجموعاتها (عند اختيار منطقة والفئة=الكل)
+  const rp=document.getElementById('regionPanel');
+  if(curRegion!=='الكل'&&isAll){rp.style.display='block';regionPanel(rp);}else{rp.style.display='none';}
   renderTable();
 }
 function renderTable(){
@@ -217,5 +245,6 @@ buildFilters();render();
 HTML = HTML.replace("__DATA__", json.dumps(D, ensure_ascii=False))
 HTML = HTML.replace("__C2G__", json.dumps(MAPS["C2G"], ensure_ascii=False))
 HTML = HTML.replace("__REG__", json.dumps(MAPS["REG"], ensure_ascii=False))
+HTML = HTML.replace("__STRUCT__", json.dumps(MAPS["STRUCT"], ensure_ascii=False))
 open("/home/user/khitba/cluster_analysis/dashboard.html", "w", encoding="utf-8").write(HTML)
 print("saved dashboard.html", len(HTML), "bytes")
