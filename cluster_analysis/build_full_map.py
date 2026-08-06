@@ -134,6 +134,26 @@ for _age in ["11-14", "5-9"]:
         DATASETS[f"{_age} — خيار {_i}"] = build_dataset(groups_1114)
     DATASETS[f"{_age} — تجربة"] = build_dataset(groups_1114)
 
+# خيار «اكسل»: تجميع رسمي من ملف الإكسل (يُحدَّث عبر update_from_excel.py)
+_egp = "/home/user/khitba/cluster_analysis/excel_groups.json"
+if os.path.exists(_egp):
+    def build_dataset_excel(groups):
+        out = []
+        for i, (region, gname, cities_ar) in enumerate(groups):
+            cities = [c for c in cities_ar if c in points]  # مدن لها إحداثيات فقط
+            if not cities:
+                continue
+            mx = cluster_maxsec(cities)
+            v = verdict_of(mx, len(cities))
+            out.append({"id": gname, "region": region, "color": PALETTE[i % len(PALETTE)],
+                        "verdict": v, "vcolor": VERDICT_COLOR.get(v, "#888"),
+                        "maxdrive": fmt_t(mx) if len(cities) > 1 else "—", "cities": cities})
+        return out
+    _eg = json.load(open(_egp, encoding="utf-8"))
+    for _age in ["11-14", "5-9"]:
+        if _eg.get(_age):
+            DATASETS[f"{_age} — اكسل"] = build_dataset_excel(_eg[_age])
+
 matrix = MX
 print("مصفوفة قوقل محمّلة:", len(matrix), "زوج")
 print("عدد خيارات التجميع:", len(DATASETS), "->", list(DATASETS.keys()))
@@ -349,7 +369,8 @@ function applyStateObj(o){if(!o||!o.store)return false;
     Object.keys(cl).forEach(id=>cl[id].cities.forEach(c=>pt[c]=id));
     const hid=Array.isArray(s.hidden)?s.hidden:Object.values(s.hidden||{});
     store[k]={CL:cl,ptCl:pt,hidden:new Set(hid.filter(h=>cl[h])),newCount:s.newCount||0,excluded:new Set((Array.isArray(s.excluded)?s.excluded:Object.values(s.excluded||{})).map(x=>RENAMES[x]||x).filter(x=>valid.has(x)))};}
-  Object.keys(DS).forEach(k=>{if(!store[k])store[k]=buildLive(k);});
+  // خيار «اكسل» يُعاد بناؤه دائمًا من أحدث بيانات مضمّنة (لا تحجبه الحالة المحفوظة)
+  Object.keys(DS).forEach(k=>{if(!store[k]||optOf(k)==='اكسل')store[k]=buildLive(k);});
   curKey=(o.curKey&&store[o.curKey]&&DS[o.curKey])?o.curKey:Object.keys(DS)[0];
   hideNone=!!o.hideNone;
   const s=store[curKey];CL=s.CL;ptCl=s.ptCl;hidden=s.hidden;newCount=s.newCount;excluded=s.excluded||new Set();return true;}
