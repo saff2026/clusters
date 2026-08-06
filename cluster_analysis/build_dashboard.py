@@ -197,8 +197,11 @@ function renderTable(){
   let rows;
   if(showG&&groupFilter){ rows=filtered().filter(r=>r.group===groupFilter);
     gf.innerHTML='<span class="chip" onclick="clearGF()">مُدن مجموعة «'+groupFilter+'» — إظهار الكل ✕</span>'; }
-  else { gf.innerHTML=''; rows=filtered().filter(r=>r.count>0);
-    if(!showG){const m={};rows.forEach(r=>{const k=r.city;if(!m[k])m[k]={city:r.city,region:r.region,count:0};m[k].count+=r.count;});rows=Object.values(m);} }
+  else { gf.innerHTML=''; rows=filtered().filter(r=>r.count>0); }
+  // دمج الصفوف: عند فئة محددة نجمع حسب (المدينة+المجموعة+المنطقة)، وإلا حسب المدينة فقط
+  if(showG){const m={};rows.forEach(r=>{const k=r.city+'|'+r.group+'|'+r.region;
+      if(!m[k])m[k]={city:r.city,group:r.group,region:r.region,count:0};m[k].count+=r.count;});rows=Object.values(m);}
+  else {const m={};rows.forEach(r=>{const k=r.city;if(!m[k])m[k]={city:r.city,region:r.region,count:0};m[k].count+=r.count;});rows=Object.values(m);}
   if(q)rows=rows.filter(r=>(r.city+r.region+(r.group||'')).indexOf(q)>=0);
   const sk=(!showG&&sortK==='group')?'count':sortK;
   rows.sort((a,b)=>{const x=a[sk],y=b[sk];return (x>y?1:x<y?-1:0)*sortDir;});
