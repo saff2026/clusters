@@ -54,8 +54,9 @@ hi = next(i for i, r in enumerate(r2)
          if r and "الصفة" in [str(c).strip() if c else "" for c in r])
 H = {str(c).strip(): j for j, c in enumerate(r2[hi]) if c is not None and str(c).strip()}
 agecols = [k for k in H if "المشاركة" in k]
+OFF_COL = "مكتب الوزارة"
 agg = defaultdict(int)
-ages, sifset = [], set()
+ages, sifset, offset = [], set(), set()
 for r in r2[hi + 1:]:
     if not r or all(c in (None, "") for c in r):
         continue
@@ -63,6 +64,7 @@ for r in r2[hi + 1:]:
     sifa = SIFA.get(raw, raw or "غير محدد")
     city = str(r[H["المدينة"]] or "").strip()
     city = CANON.get(city, city) or "غير محدد"
+    office = str(r[H[OFF_COL]] or "").strip() if OFF_COL in H and r[H[OFF_COL]] is not None else ""
     for cn in agecols:
         v = r[H[cn]]
         if not isinstance(v, (int, float)) or v <= 0:
@@ -70,16 +72,18 @@ for r in r2[hi + 1:]:
         age = "تحت " + "".join(ch for ch in cn if ch.isdigit())
         grp = (C2G.get(age, {}) or {}).get(city, "(غير مصنّف)")
         region = REG.get(city, "غير محدد")
-        agg[(age, city, grp, region, sifa)] += int(v)
+        agg[(age, city, grp, region, sifa, office)] += int(v)
         if age not in ages:
             ages.append(age)
         sifset.add(sifa)
-rows_out = [{"age": a, "city": c, "group": g, "region": rg, "sifa": s, "count": n}
-            for (a, c, g, rg, s), n in agg.items()]
+        if office:
+            offset.add(office)
+rows_out = [{"age": a, "city": c, "group": g, "region": rg, "sifa": s, "office": o, "count": n}
+            for (a, c, g, rg, s, o), n in agg.items()]
 ages.sort(key=lambda x: int("".join(ch for ch in x if ch.isdigit())))
 teams = {"rows": rows_out, "ages": ages,
          "sifas": [s for s in ["هواة", "نادي", "أكاديمية"] if s in sifset],
-         "regions": M["regions"], "target": 6}
+         "offices": sorted(offset), "regions": M["regions"], "target": 6}
 json.dump(teams, open(BASE + "teams2.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
 
 # ========== 3) خيار الخريطة «اكسل» (تجميع المدن لكل فئة) ==========

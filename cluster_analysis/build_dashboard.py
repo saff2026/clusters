@@ -69,6 +69,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
  <div class="flt"><div class="lab">صفة الفريق:</div><div class="tabs" id="sifaT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
+ <div class="flt" id="offFlt" style="display:none"><div class="lab">مكتب الوزارة:</div><select class="rgn" id="off"></select></div>
 
  <div class="kpis" id="kpis"></div>
 
@@ -96,13 +97,13 @@ function structFor(age,region){
   const m={};Object.keys(STRUCT).forEach(rg=>{const s=STRUCT[rg][age];if(s)Object.keys(s).forEach(g=>{m[g]=(m[g]||[]).concat(s[g]);});});
   Object.keys(m).forEach(g=>m[g]=[...new Set(m[g])]);return m;}
 const TARGET=DATA.target||6;
-let curAge='الكل', curSifas=[], curRegion='الكل', groupFilter=null;
+let curAge='الكل', curSifas=[], curRegion='الكل', curOffice='الكل', groupFilter=null;
 function sifaMatch(r){return curSifas.length===0||curSifas.includes(r.sifa);}
 function sifaLabel(){return curSifas.length===0?'كل الصفات':curSifas.join('، ');}
 let sortK='count', sortDir=-1;
 
-function base(){ // كل الصفوف مع فلترة الفئة والمنطقة (بدون الصفة) — للبنية
-  return DATA.rows.filter(r=>(curAge==='الكل'||r.age===curAge)&&(curRegion==='الكل'||r.region===curRegion));
+function base(){ // كل الصفوف مع فلترة الفئة والمنطقة ومكتب الوزارة (بدون الصفة) — للبنية
+  return DATA.rows.filter(r=>(curAge==='الكل'||r.age===curAge)&&(curRegion==='الكل'||r.region===curRegion)&&(curOffice==='الكل'||(r.office||'')===curOffice));
 }
 function filtered(){ return base().filter(sifaMatch); }
 function agg(rows,key){const m={};rows.forEach(r=>{if(r.count)m[r[key]]=(m[r[key]]||0)+r.count;});return m;}
@@ -166,6 +167,7 @@ function render(){
   const rows=filtered();
   const total=rows.reduce((s,r)=>s+r.count,0);
   const parts=[curAge==='الكل'?'جميع الفئات':curAge, sifaLabel(), curRegion==='الكل'?'كل المناطق':curRegion];
+  if(curOffice!=='الكل')parts.push(curOffice);
   document.getElementById('kpis').innerHTML=kpi(total,'مجموع الفِرَق — '+parts.join(' · '));
   const isAll=(curAge==='الكل');
   // المخططات العلوية (فئة + منطقة) تظهر في صفحة الكل فقط
@@ -231,6 +233,12 @@ function buildFilters(){
   const rg=document.getElementById('rgn');
   rg.innerHTML='<option value="الكل">كل المناطق</option>'+DATA.regions.map(r=>'<option'+(r===curRegion?' selected':'')+'>'+r+'</option>').join('');
   rg.onchange=()=>{curRegion=rg.value;groupFilter=null;buildFilters();render();};
+  // فلتر مكتب الوزارة — يظهر فقط عند وجود مكاتب مُدخلة
+  const offs=DATA.offices||[];const offFlt=document.getElementById('offFlt');
+  if(offs.length){offFlt.style.display='';const os=document.getElementById('off');
+    os.innerHTML='<option value="الكل">كل المكاتب</option>'+offs.map(o=>'<option'+(o===curOffice?' selected':'')+'>'+o+'</option>').join('');
+    os.onchange=()=>{curOffice=os.value;groupFilter=null;buildFilters();render();};}
+  else{offFlt.style.display='none';curOffice='الكل';}
 }
 // ===== تحديث من إكسل (يعيد البناء من صفحة بيانات التسجيل) =====
 const CANON={'جيزان':'جازان'}, SIFA={'هواة':'هواة','اكاديمية':'أكاديمية','اكاديمة':'أكاديمية','نادي':'نادي','نالدي خاص':'نادي'};
@@ -242,19 +250,20 @@ if(_fileInp)_fileInp.onchange=e=>{const f=e.target.files[0];if(!f)return;
     const A=XLSX.utils.sheet_to_json(ws,{header:1});
     let hi=A.findIndex(r=>r&&r.indexOf('الصفة')>=0);const H={};A[hi].forEach((c,j)=>{if(c)H[String(c).trim()]=j;});
     const agecols=Object.keys(H).filter(k=>k.indexOf('المشاركة')>=0);
-    const rows=[],ages=[],sifset=new Set(),regset=new Set();
+    const rows=[],ages=[],sifset=new Set(),regset=new Set(),offset=new Set();
     for(let i=hi+1;i<A.length;i++){const r=A[i];if(!r||!r.length)continue;
       let sifa=SIFA[String(r[H['الصفة']]||'').trim()]||(r[H['الصفة']]?String(r[H['الصفة']]).trim():'غير محدد');
       let city=String(r[H['المدينة']]||'').trim();city=CANON[city]||city;
+      let office=(H['مكتب الوزارة']!=null&&r[H['مكتب الوزارة']]!=null)?String(r[H['مكتب الوزارة']]).trim():'';
       agecols.forEach(cn=>{const v=r[H[cn]];if(typeof v!=='number'||v<=0)return;
         const age='تحت '+cn.replace(/\D/g,'');const grp=(C2G[age]&&C2G[age][city])||'(غير مصنّف)';
         const region=REG[city]||'غير محدد';
-        rows.push({age,city:city||'غير محدد',group:grp,region,sifa,count:v});
-        if(ages.indexOf(age)<0)ages.push(age);sifset.add(sifa);regset.add(region);});}
+        rows.push({age,city:city||'غير محدد',group:grp,region,sifa,office,count:v});
+        if(ages.indexOf(age)<0)ages.push(age);sifset.add(sifa);regset.add(region);if(office)offset.add(office);});}
     ages.sort((x,y)=>(+x.replace(/\D/g,''))-(+y.replace(/\D/g,'')));
-    DATA={rows,ages,sifas:['هواة','نادي','أكاديمية'].filter(s=>sifset.has(s)),
+    DATA={rows,ages,sifas:['هواة','نادي','أكاديمية'].filter(s=>sifset.has(s)),offices:[...offset].sort(),
       regions:[...regset].filter(r=>r!=='غير محدد').sort().concat(regset.has('غير محدد')?['غير محدد']:[]),target:TARGET};
-    curAge='الكل';curSifas=[];curRegion='الكل';groupFilter=null;buildFilters();render();
+    curAge='الكل';curSifas=[];curRegion='الكل';curOffice='الكل';groupFilter=null;buildFilters();render();
     document.getElementById('updated').textContent='حُدِّثت البيانات من ملفك';
   }catch(err){alert('تعذّر قراءة الملف: '+err.message);}};
   rd.readAsArrayBuffer(f);};
