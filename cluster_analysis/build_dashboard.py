@@ -67,7 +67,7 @@ HTML = r"""<!DOCTYPE html>
 </div>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
- <div class="flt"><div class="lab">صفة الفريق:</div><div class="tabs" id="sifaT"></div></div>
+ <div class="flt"><div class="lab">صفة الفريق: <span style="font-weight:400;font-size:11px;opacity:.75">(يمكنك اختيار أكثر من خيار)</span></div><div class="tabs" id="sifaT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
  <div class="flt" id="offFlt" style="display:none"><div class="lab">مكتب الوزارة:</div><select class="rgn" id="off"></select></div>
 
