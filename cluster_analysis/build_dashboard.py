@@ -78,6 +78,7 @@ HTML = r"""<!DOCTYPE html>
   <div class="card" id="regcard"><h3 id="regh">الفِرَق بحسب المنطقة</h3><div id="byregion"></div></div>
  </div>
  <div class="card" id="sifacard"><h3 id="sifah">الفِرَق بحسب صفة الفريق</h3><div id="bysifa"></div></div>
+ <div class="card" id="offcard" style="display:none"><h3>الفِرَق بحسب مكتب الوزارة</h3><div id="byoffice"></div></div>
  <div class="card" id="grpcard"><h3 id="grph">الفِرَق بحسب المجموعة</h3><div id="bygroup"></div></div>
  <div class="card" id="regionPanel"></div>
 
@@ -182,6 +183,10 @@ function render(){
   const showSifa=(curSifas.length===0);
   document.getElementById('sifacard').style.display=showSifa?'block':'none';
   if(showSifa)barChart(document.getElementById('bysifa'),agg(base(),'sifa'),{color:'linear-gradient(90deg,#d68910,#f5b041)'});
+  // مخطط مكاتب الوزارة — يظهر في صفحة الكل عند وجود مكاتب واختيار «كل المكاتب»
+  const showOff=isAll&&(DATA.offices||[]).length&&curOffice==='الكل';
+  document.getElementById('offcard').style.display=showOff?'block':'none';
+  if(showOff)barChart(document.getElementById('byoffice'),agg(base(),'office'),{color:'linear-gradient(90deg,#16a085,#2ee6b6)'});
   // مخطط المجموعة (لفئة محددة فقط)
   document.getElementById('grpcard').style.display=isAll?'none':'block';
   if(!isAll){document.getElementById('grph').textContent='الفِرَق بحسب المجموعة — '+curAge+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' فِرَق لكل مجموعة)';
