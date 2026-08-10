@@ -181,27 +181,30 @@ function regionPanel(el){
 function groupCities(){const m={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
   const s=STRUCT[rg][ag];Object.keys(s).forEach(g=>{m[g]=[...new Set((m[g]||[]).concat(s[g]))];});}));return m;}
 function allGroupsCard(el){
-  // كل المجموعات وحالتها لكل فئة عمرية (بما فيها الفارغة)
-  const gc=groupCities();
-  const info={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
-    Object.keys(STRUCT[rg][ag]).forEach(g=>{if(!info[g])info[g]={region:rg,ages:new Set()};info[g].ages.add(ag);});}));
-  const cnt={};filtered().forEach(r=>{(cnt[r.group]=cnt[r.group]||{})[r.age]=((cnt[r.group]||{})[r.age]||0)+r.count;});
-  let arr=Object.keys(info).filter(g=>curRegion==='الكل'||info[g].region===curRegion).map(g=>{
-    const ages=DATA.ages.filter(a=>info[g].ages.has(a));const c=cnt[g]||{};
-    const total=ages.reduce((s,a)=>s+(c[a]||0),0),done=ages.filter(a=>(c[a]||0)>=TARGET).length;
-    return {group:g,region:info[g].region,cities:(gc[g]||[]).join('، '),ages,c,total,done,n:ages.length};});
-  arr.sort((a,b)=>b.total-a.total);
-  const full=arr.filter(a=>a.n&&a.done===a.n).length;
-  el.innerHTML='<h3>حالة كل المجموعات — '+arr.length+' مجموعة · مكتملة بالكامل: '+full+'</h3>'+
-    arr.map(a=>{const isFull=a.n&&a.done===a.n;
-      const chips=a.ages.map(ag=>{const n=a.c[ag]||0,ok=n>=TARGET;
-        return '<span style="font-size:11px;border-radius:6px;padding:2px 7px;white-space:nowrap;background:'+(ok?'#14532a':'#5a1e1e')+';color:'+(ok?'#8ff0b0':'#ff9a9a')+'">'+ag+': '+n+'</span>';}).join('');
-      return '<div class="bar" style="align-items:flex-start;gap:10px;margin-bottom:10px">'+
-        '<div class="lab" style="width:210px;white-space:normal"><b>'+a.group+'</b>'+
-          ' <span style="color:'+(isFull?'#7ee0a0':'#ffd166')+';font-size:10px">'+(isFull?'مكتملة ✓':a.done+'/'+a.n+' فئات')+'</span>'+
-          '<div class="sub">'+a.region+(a.cities?' — ('+a.cities+')':'')+'</div></div>'+
-        '<div style="flex:1;display:flex;flex-wrap:wrap;gap:5px;padding-top:2px">'+chips+'</div>'+
-        '<div class="val">'+a.total+'</div></div>';}).join('');
+  // كل المجموعات مرتّبة بالفئات ثم المجموعات (لكل فئة: مجموعاتها وحالتها)
+  const om=groupOffSet();
+  let html='<h3>حالة المجموعات حسب الفئة العمرية'+(curRegion==='الكل'?'':' — '+curRegion)+(curSifas.length?' — '+curSifas.join('، '):'')+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
+  DATA.ages.forEach(age=>{
+    let struct;
+    if(curRegion==='الكل'){struct={};Object.keys(STRUCT).forEach(rg=>{const s=STRUCT[rg][age];if(s)Object.keys(s).forEach(g=>{struct[g]=s[g];});});}
+    else struct=(STRUCT[curRegion]&&STRUCT[curRegion][age])||{};
+    const cnt={};filtered().filter(r=>r.age===age).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
+    let arr=Object.keys(struct).map(g=>({group:g,count:cnt[g]||0,cities:struct[g].join('، ')}));
+    Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
+    if(!arr.length)return;
+    arr.sort((a,b)=>b.count-a.count);
+    const mx=Math.max(TARGET,1,...arr.map(a=>a.count)), doneN=arr.filter(a=>a.count>=TARGET).length;
+    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #1c3a5e;padding-top:10px">'+age+' <span style="color:#9fb6d0;font-size:11px;font-weight:400">('+doneN+'/'+arr.length+' مكتملة)</span></div>';
+    html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b',shared=[...(om[a.group]||[])];
+      return '<div class="bar"><div class="lab" style="width:240px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
+        ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span>'+
+        (shared.length>1?' <span style="background:#8e6b1f;color:#ffe9a8;font-size:10px;border-radius:8px;padding:1px 6px">🔗 '+shared.join('، ')+'</span>':'')+
+        (a.cities?'<div class="sub">('+a.cities+')</div>':'')+'</div>'+
+        '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
+        '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';}).join('');
+    html+='</div>';
+  });
+  el.innerHTML=html;
 }
 // المجموعة -> مكاتب فرقها (من التسجيل). أكثر من مكتب = مشتركة
 function groupOffSet(){const m={};DATA.rows.forEach(r=>{const o=(r.office||'');if(o&&r.count>0){(m[r.group]=m[r.group]||new Set()).add(o);}});return m;}
