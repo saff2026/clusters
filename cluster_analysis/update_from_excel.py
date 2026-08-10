@@ -88,8 +88,8 @@ for r in r2[hi + 1:]:
         age = "تحت " + "".join(ch for ch in cn if ch.isdigit())
         grp = (C2G.get(age, {}) or {}).get(city, "(غير مصنّف)")
         region = REG.get(city, "غير محدد")
-        # المكتب المعتمد = مكتب المجموعة من جدول «المدخلات» (وإلا مكتب التسجيل)
-        office = GROFF.get(grp, reg_office)
+        # المكتب المعتمد = مكتب التسجيل (كما أدخله المسجِّل)
+        office = reg_office
         agg[(age, city, grp, region, sifa, office)] += int(v)
         if age not in ages:
             ages.append(age)

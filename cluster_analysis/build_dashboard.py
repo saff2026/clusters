@@ -125,6 +125,7 @@ function ageChartData(){const m={};DATA.ages.forEach(a=>m[a]=0);
 function groupChart(el){
   // البنية من التقسيمة (كل المجموعات حتى الفارغة) — العدّ حسب الفلاتر
   const struct=structFor(curAge,curRegion);
+  const om=groupOffSet();
   const cnt={};filtered().forEach(r=>{cnt[r.group]=(cnt[r.group]||0)+r.count;});
   let arr;
   if(curOffice!=='الكل'){ // عند فلترة مكتب: مجموعات هذا المكتب فقط
@@ -140,8 +141,11 @@ function groupChart(el){
     const ok=a.count>=TARGET;
     const col=ok?'linear-gradient(90deg,#1a9850,#2ecc71)':'linear-gradient(90deg,#c0392b,#e74c3c)';
     const note=ok?('مكتمل'+(a.count>TARGET?' (زائد '+(a.count-TARGET)+')':'')):('المتبقّي '+(TARGET-a.count)+' فريق للوصول إلى '+TARGET);
+    const offs=[...(om[a.group]||[])];const shared=(curOffice==='الكل')?(offs.length>1?offs:[]):offs.filter(o=>o!==curOffice);
     return '<div class="bar wide clk" data-k="'+a.group.replace(/"/g,'&quot;')+'">'+
-      '<div class="lab"><b>'+a.group+'</b><div class="sub">('+a.cities+')</div>'+
+      '<div class="lab"><b>'+a.group+'</b>'+
+      (shared.length?'<div class="sub" style="color:#ffe9a8">🔗 مشترك بين مكاتب: '+shared.join('، ')+'</div>':'')+
+      '<div class="sub">('+a.cities+')</div>'+
       '<div class="sub" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-weight:700">'+note+'</div></div>'+
       '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
       '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';
@@ -191,22 +195,23 @@ function emptyGroupsCard(el){
       '<div class="track"><div class="fill" style="width:2px;background:#c0392b"></div></div>'+
       '<div class="val" style="color:#ff9a9a">0</div></div>').join(''):'<div class="muted">لا توجد مجموعات فارغة.</div>');
 }
+// المجموعة -> مكاتب فرقها (من التسجيل). أكثر من مكتب = مشتركة
+function groupOffSet(){const m={};DATA.rows.forEach(r=>{const o=(r.office||'');if(o&&r.count>0){(m[r.group]=m[r.group]||new Set()).add(o);}});return m;}
 function officePanel(el){
-  const gc=groupCities();
+  const gc=groupCities(), om=groupOffSet();
   let html='<h3>مجموعات مكتب '+curOffice+' حسب الفئة العمرية'+(curSifas.length?' — '+curSifas.join('، '):'')+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
   DATA.ages.forEach(age=>{
     const cnt={};DATA.rows.filter(r=>(r.office||'')===curOffice&&r.age===age&&sifaMatch(r)&&(curRegion==='الكل'||r.region===curRegion)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
-    // كل مجموعات هذا المكتب في هذه الفئة (حتى الفارغة) من ربط المجموعة→المكتب
-    const groups=new Set(Object.values(C2G[age]||{}).filter(g=>GROFF[g]===curOffice));
-    Object.keys(cnt).forEach(g=>{if(cnt[g]>0)groups.add(g);});
-    let arr=[...groups].map(g=>({group:g,count:cnt[g]||0,cities:(gc[g]||[]).join('، ')}));
+    let arr=Object.keys(cnt).filter(g=>cnt[g]>0).map(g=>({group:g,count:cnt[g],cities:(gc[g]||[]).join('، '),
+      shared:[...(om[g]||[])].filter(o=>o!==curOffice)}));
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
     const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
     html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #1c3a5e;padding-top:10px">'+age+'</div>';
     html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
-      return '<div class="bar"><div class="lab" style="width:210px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
+      return '<div class="bar"><div class="lab" style="width:230px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
         ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span>'+
+        (a.shared.length?' <span style="background:#8e6b1f;color:#ffe9a8;font-size:10px;border-radius:8px;padding:1px 6px">🔗 مشترك مع: '+a.shared.join('، ')+'</span>':'')+
         (a.cities?'<div class="sub">('+a.cities+')</div>':'')+'</div>'+
         '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
         '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';}).join('');
