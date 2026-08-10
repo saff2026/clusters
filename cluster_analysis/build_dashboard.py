@@ -81,6 +81,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="card" id="offcard" style="display:none"><h3>الفِرَق بحسب مكتب الوزارة</h3><div id="byoffice"></div></div>
  <div class="card" id="grpcard"><h3 id="grph">الفِرَق بحسب المجموعة</h3><div id="bygroup"></div></div>
  <div class="card" id="regionPanel"></div>
+ <div class="card" id="officePanel"></div>
 
  <div class="card"><h3 id="cityh">الفِرَق بحسب المدينة</h3>
   <div id="gfilter"></div>
@@ -164,6 +165,29 @@ function regionPanel(el){
   });
   el.innerHTML=html;
 }
+// خريطة المجموعة->مدنها (من التقسيمة، موحّدة عبر المناطق)
+function groupCities(){const m={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
+  const s=STRUCT[rg][ag];Object.keys(s).forEach(g=>{m[g]=[...new Set((m[g]||[]).concat(s[g]))];});}));return m;}
+function officePanel(el){
+  const gc=groupCities();
+  let html='<h3>مجموعات مكتب '+curOffice+' حسب الفئة العمرية'+(curSifas.length?' — '+curSifas.join('، '):'')+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
+  DATA.ages.forEach(age=>{
+    const cnt={};DATA.rows.filter(r=>(r.office||'')===curOffice&&r.age===age&&sifaMatch(r)&&(curRegion==='الكل'||r.region===curRegion)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
+    let arr=Object.keys(cnt).filter(g=>cnt[g]>0).map(g=>({group:g,count:cnt[g],cities:(gc[g]||[]).join('، ')}));
+    if(!arr.length)return;
+    arr.sort((a,b)=>b.count-a.count);
+    const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
+    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #1c3a5e;padding-top:10px">'+age+'</div>';
+    html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
+      return '<div class="bar"><div class="lab" style="width:210px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
+        ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span>'+
+        (a.cities?'<div class="sub">('+a.cities+')</div>':'')+'</div>'+
+        '<div class="track"><div class="fill" style="width:'+(a.count/mx*100)+'%;background:'+col+'"></div></div>'+
+        '<div class="val" style="color:'+(ok?'#7ee0a0':'#ff9a9a')+'">'+a.count+'</div></div>';}).join('');
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
 function render(){
   const rows=filtered();
   const total=rows.reduce((s,r)=>s+r.count,0);
@@ -194,6 +218,9 @@ function render(){
   // صفحة المنطقة: كل الفئات ومجموعاتها (عند اختيار منطقة والفئة=الكل)
   const rp=document.getElementById('regionPanel');
   if(curRegion!=='الكل'&&isAll){rp.style.display='block';regionPanel(rp);}else{rp.style.display='none';}
+  // صفحة المكتب: مجموعات المكتب المحدّد حسب الفئة (عند اختيار مكتب والفئة=الكل)
+  const op=document.getElementById('officePanel');
+  if(curOffice!=='الكل'&&isAll){op.style.display='block';officePanel(op);}else{op.style.display='none';}
   renderTable();
 }
 function renderTable(){
