@@ -94,7 +94,7 @@ HTML = r"""<!DOCTYPE html>
 </div>
 <script>
 let DATA=__DATA__;
-const C2G=__C2G__, REG=__REG__, STRUCT=__STRUCT__;
+const C2G=__C2G__, REG=__REG__, STRUCT=__STRUCT__, GROFF=__GROFF__;
 function structFor(age,region){
   if(region!=='الكل')return (STRUCT[region]&&STRUCT[region][age])||{};
   const m={};Object.keys(STRUCT).forEach(rg=>{const s=STRUCT[rg][age];if(s)Object.keys(s).forEach(g=>{m[g]=(m[g]||[]).concat(s[g]);});});
@@ -196,7 +196,10 @@ function officePanel(el){
   let html='<h3>مجموعات مكتب '+curOffice+' حسب الفئة العمرية'+(curSifas.length?' — '+curSifas.join('، '):'')+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
   DATA.ages.forEach(age=>{
     const cnt={};DATA.rows.filter(r=>(r.office||'')===curOffice&&r.age===age&&sifaMatch(r)&&(curRegion==='الكل'||r.region===curRegion)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
-    let arr=Object.keys(cnt).filter(g=>cnt[g]>0).map(g=>({group:g,count:cnt[g],cities:(gc[g]||[]).join('، ')}));
+    // كل مجموعات هذا المكتب في هذه الفئة (حتى الفارغة) من ربط المجموعة→المكتب
+    const groups=new Set(Object.values(C2G[age]||{}).filter(g=>GROFF[g]===curOffice));
+    Object.keys(cnt).forEach(g=>{if(cnt[g]>0)groups.add(g);});
+    let arr=[...groups].map(g=>({group:g,count:cnt[g]||0,cities:(gc[g]||[]).join('، ')}));
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
     const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
@@ -332,6 +335,7 @@ HTML = HTML.replace("__DATA__", json.dumps(D, ensure_ascii=False))
 HTML = HTML.replace("__C2G__", json.dumps(MAPS["C2G"], ensure_ascii=False))
 HTML = HTML.replace("__REG__", json.dumps(MAPS["REG"], ensure_ascii=False))
 HTML = HTML.replace("__STRUCT__", json.dumps(MAPS["STRUCT"], ensure_ascii=False))
+HTML = HTML.replace("__GROFF__", json.dumps(MAPS.get("GROFF", {}), ensure_ascii=False))
 open("/home/user/khitba/cluster_analysis/dashboard.html", "w", encoding="utf-8").write(HTML)
 print("saved dashboard.html", len(HTML), "bytes")
 

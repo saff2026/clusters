@@ -45,6 +45,22 @@ for rg in STRUCT.values():
         for grp in ag:
             ag[grp] = sorted(ag[grp])
 M["C2G"], M["STRUCT"] = C2G, STRUCT
+
+# ربط المجموعة -> المكتب/المنطقة من صفحة «المدخلات» (المصدر الرسمي للمكاتب)
+GROFF, GRREG = {}, {}
+if "المدخلات" in wb.sheetnames:
+    wi = list(wb["المدخلات"].iter_rows(values_only=True))
+    for r in wi[2:]:
+        if not r or len(r) < 9:
+            continue
+        g = str(r[6]).strip() if r[6] else ""
+        reg = str(r[7]).strip() if r[7] else ""
+        off = str(r[8]).strip() if r[8] else ""
+        if g and off:
+            GROFF[g] = off
+        if g and reg:
+            GRREG[g] = reg
+M["GROFF"], M["GRREG"] = GROFF, GRREG
 json.dump(M, open(BASE + "_maps.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
 
 # ========== 2) بيانات الداشبورد من «بيانات التسجيل» ==========
@@ -64,7 +80,7 @@ for r in r2[hi + 1:]:
     sifa = SIFA.get(raw, raw or "غير محدد")
     city = str(r[H["المدينة"]] or "").strip()
     city = CANON.get(city, city) or "غير محدد"
-    office = str(r[H[OFF_COL]] or "").strip() if OFF_COL in H and r[H[OFF_COL]] is not None else ""
+    reg_office = str(r[H[OFF_COL]] or "").strip() if OFF_COL in H and r[H[OFF_COL]] is not None else ""
     for cn in agecols:
         v = r[H[cn]]
         if not isinstance(v, (int, float)) or v <= 0:
@@ -72,6 +88,8 @@ for r in r2[hi + 1:]:
         age = "تحت " + "".join(ch for ch in cn if ch.isdigit())
         grp = (C2G.get(age, {}) or {}).get(city, "(غير مصنّف)")
         region = REG.get(city, "غير محدد")
+        # المكتب المعتمد = مكتب المجموعة من جدول «المدخلات» (وإلا مكتب التسجيل)
+        office = GROFF.get(grp, reg_office)
         agg[(age, city, grp, region, sifa, office)] += int(v)
         if age not in ages:
             ages.append(age)
