@@ -191,11 +191,17 @@ function emptyGroupsCard(el){
 function groupOffSet(){const m={};DATA.rows.forEach(r=>{const o=(r.office||'');if(o&&r.count>0){(m[r.group]=m[r.group]||new Set()).add(o);}});return m;}
 function officePanel(el){
   const gc=groupCities(), om=groupOffSet();
+  const tot={};DATA.rows.forEach(r=>{tot[r.group]=(tot[r.group]||0)+r.count;}); // إجمالي كل مجموعة (لمعرفة الفارغة)
   let html='<h3>مجموعات مكتب '+curOffice+' حسب الفئة العمرية'+(curSifas.length?' — '+curSifas.join('، '):'')+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
   DATA.ages.forEach(age=>{
     const cnt={};DATA.rows.filter(r=>(r.office||'')===curOffice&&r.age===age&&sifaMatch(r)&&(curRegion==='الكل'||r.region===curRegion)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
     let arr=Object.keys(cnt).filter(g=>cnt[g]>0).map(g=>({group:g,count:cnt[g],cities:(gc[g]||[]).join('، '),
       shared:[...(om[g]||[])].filter(o=>o!==curOffice)}));
+    // المجموعات الفارغة التابعة لهذا المكتب (من جدول المجموعة→المكتب) — تظهر بصفر
+    if(curRegion==='الكل'&&!curSifas.length){
+      const empt=new Set(Object.values(C2G[age]||{}).filter(g=>GROFF[g]===curOffice&&!(tot[g]>0)));
+      empt.forEach(g=>{if(!cnt[g])arr.push({group:g,count:0,cities:(gc[g]||[]).join('، '),shared:[]});});
+    }
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
     const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
@@ -245,8 +251,9 @@ function render(){
   const op=document.getElementById('officePanel');
   if(curOffice!=='الكل'&&isAll){op.style.display='block';officePanel(op);}else{op.style.display='none';}
   // بطاقة المجموعات الفارغة (0 فريق) — في الصفحة الرئيسية
+  // بطاقة المجموعات الفارغة العامة تظهر فقط في وضع «كل المكاتب» (عند اختيار مكتب تندرج ضمن صفحته)
   const ec=document.getElementById('emptyCard');
-  if(isAll){ec.style.display='block';emptyGroupsCard(ec);}else{ec.style.display='none';}
+  if(isAll&&curOffice==='الكل'){ec.style.display='block';emptyGroupsCard(ec);}else{ec.style.display='none';}
   renderTable();
 }
 function renderTable(){
