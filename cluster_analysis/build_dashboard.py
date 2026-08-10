@@ -361,7 +361,8 @@ function drawSummaryImage(){
   const offices=Object.keys(offTot).sort((a,b)=>offTot[b]-offTot[a]);
   if(!offices.length){alert('لا توجد بيانات مكاتب للعرض');return;}
   const S=2,PAD=24,titleH=66,headH=54,rowH=44,footH=50,totalW=120,ageW=104,offW=220;
-  const W=PAD*2+totalW+ages.length*ageW+offW, H=PAD*2+titleH+headH+offices.length*rowH+footH;
+  const AGE_TARGET={'تحت 5':510,'تحت 7':510,'تحت 9':510,'تحت 11':276,'تحت 12':276,'تحت 13':276,'تحت 14':276};
+  const W=PAD*2+totalW+ages.length*ageW+offW, H=PAD*2+titleH+headH+offices.length*rowH+footH*2;
   const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;const ctx=cv.getContext('2d');ctx.scale(S,S);
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a3d2a');g.addColorStop(1,'#062015');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   ctx.textBaseline='middle';
@@ -384,6 +385,12 @@ function drawSummaryImage(){
   txt(last,fy,footH,'المجموع','#ffd166','right','800 17px Tajawal, sans-serif');
   ages.forEach((a,ai)=>txt(1+ai,fy,footH,ageTot[a],'#ffd166','center','800 17px Tajawal, sans-serif'));
   rect(0,fy,footH,'#ffd166');txt(0,fy,footH,grand,'#04150e','center','800 18px Tajawal, sans-serif');
+  // صف المُستهدَف
+  const ty=fy+footH;let tg=0;ages.forEach(a=>tg+=(AGE_TARGET[a]||0));
+  xs.forEach((_,ci)=>rect(ci,ty,footH,'#7a5f00'));
+  txt(last,ty,footH,'المُستهدَف','#ffe9a8','right','800 17px Tajawal, sans-serif');
+  ages.forEach((a,ai)=>txt(1+ai,ty,footH,(AGE_TARGET[a]||0),'#ffe9a8','center','800 17px Tajawal, sans-serif'));
+  rect(0,ty,footH,'#b8860b');txt(0,ty,footH,tg,'#1a1400','center','800 18px Tajawal, sans-serif');
   const a=document.createElement('a');a.download='ملخص-المكاتب-والفئات.png';a.href=cv.toDataURL('image/png');a.click();
 }
 const _dl=document.getElementById('dlSum');
