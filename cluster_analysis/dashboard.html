@@ -74,6 +74,7 @@
  <div class="card" id="grpcard"><h3 id="grph">الفِرَق بحسب المجموعة</h3><div id="bygroup"></div></div>
  <div class="card" id="regionPanel"></div>
  <div class="card" id="officePanel"></div>
+ <div class="card" id="emptyCard" style="display:none"></div>
 
  <div class="card"><h3 id="cityh">الفِرَق بحسب المدينة</h3>
   <div id="gfilter"></div>
@@ -166,6 +167,22 @@ function regionPanel(el){
 // خريطة المجموعة->مدنها (من التقسيمة، موحّدة عبر المناطق)
 function groupCities(){const m={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
   const s=STRUCT[rg][ag];Object.keys(s).forEach(g=>{m[g]=[...new Set((m[g]||[]).concat(s[g]))];});}));return m;}
+function emptyGroupsCard(el){
+  // مجموعات بلا أي تسجيل (0 فريق) — من التقسيمة، مع منطقتها ومدنها
+  const info={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
+    const s=STRUCT[rg][ag];Object.keys(s).forEach(g=>{
+      if(!info[g])info[g]={region:rg,cities:new Set()};s[g].forEach(c=>info[g].cities.add(c));});}));
+  const tot={};DATA.rows.forEach(r=>{tot[r.group]=(tot[r.group]||0)+r.count;});
+  let arr=Object.keys(info).filter(g=>!(tot[g]>0)&&(curRegion==='الكل'||info[g].region===curRegion))
+    .map(g=>({group:g,region:info[g].region,cities:[...info[g].cities].join('، ')}));
+  arr.sort((a,b)=>a.region<b.region?-1:a.region>b.region?1:(a.group<b.group?-1:1));
+  el.innerHTML='<h3>مجموعات بلا تسجيلات — 0 فريق ('+arr.length+' مجموعة)</h3>'+
+    (arr.length?arr.map(a=>'<div class="bar"><div class="lab" style="width:260px;white-space:normal"><b>'+a.group+'</b>'+
+      ' <span style="color:#ff9a9a;font-size:10px">باقٍ '+TARGET+'</span>'+
+      '<div class="sub">'+a.region+(a.cities?' — ('+a.cities+')':'')+'</div></div>'+
+      '<div class="track"><div class="fill" style="width:2px;background:#c0392b"></div></div>'+
+      '<div class="val" style="color:#ff9a9a">0</div></div>').join(''):'<div class="muted">لا توجد مجموعات فارغة.</div>');
+}
 function officePanel(el){
   const gc=groupCities();
   let html='<h3>مجموعات مكتب '+curOffice+' حسب الفئة العمرية'+(curSifas.length?' — '+curSifas.join('، '):'')+(curRegion==='الكل'?'':' · '+curRegion)+' (المطلوب: '+TARGET+' لكل مجموعة)</h3>';
@@ -219,6 +236,9 @@ function render(){
   // صفحة المكتب: مجموعات المكتب المحدّد حسب الفئة (عند اختيار مكتب والفئة=الكل)
   const op=document.getElementById('officePanel');
   if(curOffice!=='الكل'&&isAll){op.style.display='block';officePanel(op);}else{op.style.display='none';}
+  // بطاقة المجموعات الفارغة (0 فريق) — في الصفحة الرئيسية
+  const ec=document.getElementById('emptyCard');
+  if(isAll){ec.style.display='block';emptyGroupsCard(ec);}else{ec.style.display='none';}
   renderTable();
 }
 function renderTable(){
