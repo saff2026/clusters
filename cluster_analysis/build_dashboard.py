@@ -70,6 +70,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="flt"><div class="lab">صفة الفريق: <span style="font-weight:400;font-size:11px;opacity:.75">(يمكنك اختيار أكثر من خيار)</span></div><div class="tabs" id="sifaT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
  <div class="flt" id="offFlt" style="display:none"><div class="lab">مكتب الوزارة:</div><select class="rgn" id="off"></select></div>
+ <div class="flt"><button class="btn g" id="dlSum" style="cursor:pointer">📷 تنزيل صورة ملخص المكاتب والفئات</button></div>
 
  <div class="kpis" id="kpis"></div>
 
@@ -347,6 +348,43 @@ if(_fileInp)_fileInp.onchange=e=>{const f=e.target.files[0];if(!f)return;
     document.getElementById('updated').textContent='حُدِّثت البيانات من ملفك';
   }catch(err){alert('تعذّر قراءة الملف: '+err.message);}};
   rd.readAsArrayBuffer(f);};
+// ===== زر تنزيل صورة ملخص المكاتب × الفئات (canvas — بدون مكتبات) =====
+function drawSummaryImage(){
+  const ages=DATA.ages.slice(); // تصاعدي تحت5..تحت14
+  const rows=DATA.rows.filter(r=>sifaMatch(r)&&(curRegion==='الكل'||r.region===curRegion)&&r.office);
+  const cell={},offTot={},ageTot={};let grand=0;ages.forEach(a=>ageTot[a]=0);
+  rows.forEach(r=>{const o=r.office;(cell[o]=cell[o]||{})[r.age]=((cell[o]||{})[r.age]||0)+r.count;
+    offTot[o]=(offTot[o]||0)+r.count;ageTot[r.age]=(ageTot[r.age]||0)+r.count;grand+=r.count;});
+  const offices=Object.keys(offTot).sort((a,b)=>offTot[b]-offTot[a]);
+  if(!offices.length){alert('لا توجد بيانات مكاتب للعرض');return;}
+  const S=2,PAD=24,titleH=66,headH=54,rowH=44,footH=50,totalW=120,ageW=104,offW=220;
+  const W=PAD*2+totalW+ages.length*ageW+offW, H=PAD*2+titleH+headH+offices.length*rowH+footH;
+  const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;const ctx=cv.getContext('2d');ctx.scale(S,S);
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a3d2a');g.addColorStop(1,'#062015');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='middle';
+  ctx.fillStyle='#ffd166';ctx.font='800 26px Tajawal, sans-serif';ctx.textAlign='right';
+  ctx.fillText('ملخص الفِرَق حسب المكتب والفئة العمرية'+(curRegion==='الكل'?'':' — '+curRegion)+(curSifas.length?' — '+curSifas.join('، '):''),W-PAD,PAD+titleH/2);
+  const xs=[];let x=PAD;xs.push([x,totalW]);x+=totalW;ages.forEach(()=>{xs.push([x,ageW]);x+=ageW;});xs.push([x,offW]);
+  const last=xs.length-1, hy=PAD+titleH;
+  function rect(ci,y,h,bg){const c=xs[ci];ctx.fillStyle=bg;ctx.fillRect(c[0],y,c[1],h);ctx.strokeStyle='#14442f';ctx.lineWidth=1;ctx.strokeRect(c[0],y,c[1],h);}
+  function txt(ci,y,h,t,color,align,font){const c=xs[ci];ctx.fillStyle=color;ctx.font=font;ctx.textAlign=align;
+    const tx=align==='center'?c[0]+c[1]/2:align==='right'?c[0]+c[1]-10:c[0]+10;ctx.fillText(''+t,tx,y+h/2);}
+  const heads=['المجموع',...ages,'المكتب/الفرع'];
+  heads.forEach((l,ci)=>{rect(ci,hy,headH,ci===last?'#093a26':'#0d6b45');txt(ci,hy,headH,l,'#fff','center','800 17px Tajawal, sans-serif');});
+  offices.forEach((o,ri)=>{const y=hy+headH+ri*rowH;
+    xs.forEach((_,ci)=>rect(ci,y,rowH,ri%2?'#0c2c1e':'#0a2417'));
+    txt(last,y,rowH,o,'#eafff3','right','700 17px Tajawal, sans-serif');
+    ages.forEach((a,ai)=>{const n=(cell[o]&&cell[o][a])||0;txt(1+ai,y,rowH,n,n?'#dbeee3':'#4f7a63','center','16px Tajawal, sans-serif');});
+    rect(0,y,rowH,'#124a30');txt(0,y,rowH,offTot[o],'#ffd166','center','800 17px Tajawal, sans-serif');});
+  const fy=hy+headH+offices.length*rowH;
+  xs.forEach((_,ci)=>rect(ci,fy,footH,'#0d6b45'));
+  txt(last,fy,footH,'المجموع','#ffd166','right','800 17px Tajawal, sans-serif');
+  ages.forEach((a,ai)=>txt(1+ai,fy,footH,ageTot[a],'#ffd166','center','800 17px Tajawal, sans-serif'));
+  rect(0,fy,footH,'#ffd166');txt(0,fy,footH,grand,'#04150e','center','800 18px Tajawal, sans-serif');
+  const a=document.createElement('a');a.download='ملخص-المكاتب-والفئات.png';a.href=cv.toDataURL('image/png');a.click();
+}
+const _dl=document.getElementById('dlSum');
+if(_dl)_dl.onclick=()=>{ if(document.fonts&&document.fonts.ready){document.fonts.ready.then(drawSummaryImage);}else{drawSummaryImage();} };
 buildFilters();render();
 </script></body></html>"""
 
