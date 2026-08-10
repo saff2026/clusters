@@ -179,21 +179,28 @@ function regionPanel(el){
 // خريطة المجموعة->مدنها (من التقسيمة، موحّدة عبر المناطق)
 function groupCities(){const m={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
   const s=STRUCT[rg][ag];Object.keys(s).forEach(g=>{m[g]=[...new Set((m[g]||[]).concat(s[g]))];});}));return m;}
-function emptyGroupsCard(el){
-  // مجموعات بلا أي تسجيل (0 فريق) — من التقسيمة، مع منطقتها ومدنها
+function allGroupsCard(el){
+  // كل المجموعات وحالتها لكل فئة عمرية (بما فيها الفارغة)
+  const gc=groupCities();
   const info={};Object.keys(STRUCT).forEach(rg=>Object.keys(STRUCT[rg]).forEach(ag=>{
-    const s=STRUCT[rg][ag];Object.keys(s).forEach(g=>{
-      if(!info[g])info[g]={region:rg,cities:new Set()};s[g].forEach(c=>info[g].cities.add(c));});}));
-  const tot={};DATA.rows.forEach(r=>{tot[r.group]=(tot[r.group]||0)+r.count;});
-  let arr=Object.keys(info).filter(g=>!(tot[g]>0)&&(curRegion==='الكل'||info[g].region===curRegion))
-    .map(g=>({group:g,region:info[g].region,cities:[...info[g].cities].join('، ')}));
-  arr.sort((a,b)=>a.region<b.region?-1:a.region>b.region?1:(a.group<b.group?-1:1));
-  el.innerHTML='<h3>مجموعات بلا تسجيلات — 0 فريق ('+arr.length+' مجموعة)</h3>'+
-    (arr.length?arr.map(a=>'<div class="bar"><div class="lab" style="width:260px;white-space:normal"><b>'+a.group+'</b>'+
-      ' <span style="color:#ff9a9a;font-size:10px">باقٍ '+TARGET+'</span>'+
-      '<div class="sub">'+a.region+(a.cities?' — ('+a.cities+')':'')+'</div></div>'+
-      '<div class="track"><div class="fill" style="width:2px;background:#c0392b"></div></div>'+
-      '<div class="val" style="color:#ff9a9a">0</div></div>').join(''):'<div class="muted">لا توجد مجموعات فارغة.</div>');
+    Object.keys(STRUCT[rg][ag]).forEach(g=>{if(!info[g])info[g]={region:rg,ages:new Set()};info[g].ages.add(ag);});}));
+  const cnt={};filtered().forEach(r=>{(cnt[r.group]=cnt[r.group]||{})[r.age]=((cnt[r.group]||{})[r.age]||0)+r.count;});
+  let arr=Object.keys(info).filter(g=>curRegion==='الكل'||info[g].region===curRegion).map(g=>{
+    const ages=DATA.ages.filter(a=>info[g].ages.has(a));const c=cnt[g]||{};
+    const total=ages.reduce((s,a)=>s+(c[a]||0),0),done=ages.filter(a=>(c[a]||0)>=TARGET).length;
+    return {group:g,region:info[g].region,cities:(gc[g]||[]).join('، '),ages,c,total,done,n:ages.length};});
+  arr.sort((a,b)=>b.total-a.total);
+  const full=arr.filter(a=>a.n&&a.done===a.n).length;
+  el.innerHTML='<h3>حالة كل المجموعات — '+arr.length+' مجموعة · مكتملة بالكامل: '+full+'</h3>'+
+    arr.map(a=>{const isFull=a.n&&a.done===a.n;
+      const chips=a.ages.map(ag=>{const n=a.c[ag]||0,ok=n>=TARGET;
+        return '<span style="font-size:11px;border-radius:6px;padding:2px 7px;white-space:nowrap;background:'+(ok?'#14532a':'#5a1e1e')+';color:'+(ok?'#8ff0b0':'#ff9a9a')+'">'+ag+': '+n+'</span>';}).join('');
+      return '<div class="bar" style="align-items:flex-start;gap:10px;margin-bottom:10px">'+
+        '<div class="lab" style="width:210px;white-space:normal"><b>'+a.group+'</b>'+
+          ' <span style="color:'+(isFull?'#7ee0a0':'#ffd166')+';font-size:10px">'+(isFull?'مكتملة ✓':a.done+'/'+a.n+' فئات')+'</span>'+
+          '<div class="sub">'+a.region+(a.cities?' — ('+a.cities+')':'')+'</div></div>'+
+        '<div style="flex:1;display:flex;flex-wrap:wrap;gap:5px;padding-top:2px">'+chips+'</div>'+
+        '<div class="val">'+a.total+'</div></div>';}).join('');
 }
 // المجموعة -> مكاتب فرقها (من التسجيل). أكثر من مكتب = مشتركة
 function groupOffSet(){const m={};DATA.rows.forEach(r=>{const o=(r.office||'');if(o&&r.count>0){(m[r.group]=m[r.group]||new Set()).add(o);}});return m;}
@@ -259,9 +266,9 @@ function render(){
   const op=document.getElementById('officePanel');
   if(curOffice!=='الكل'&&isAll){op.style.display='block';officePanel(op);}else{op.style.display='none';}
   // بطاقة المجموعات الفارغة (0 فريق) — في الصفحة الرئيسية
-  // بطاقة المجموعات الفارغة العامة تظهر فقط في وضع «كل المكاتب» (عند اختيار مكتب تندرج ضمن صفحته)
+  // بطاقة حالة كل المجموعات — في الصفحة الرئيسية (وضع كل الفئات وكل المكاتب)
   const ec=document.getElementById('emptyCard');
-  if(isAll&&curOffice==='الكل'){ec.style.display='block';emptyGroupsCard(ec);}else{ec.style.display='none';}
+  if(isAll&&curOffice==='الكل'){ec.style.display='block';allGroupsCard(ec);}else{ec.style.display='none';}
   renderTable();
 }
 function renderTable(){
