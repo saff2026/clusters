@@ -125,8 +125,14 @@ function groupChart(el){
   // البنية من التقسيمة (كل المجموعات حتى الفارغة) — العدّ حسب الفلاتر
   const struct=structFor(curAge,curRegion);
   const cnt={};filtered().forEach(r=>{cnt[r.group]=(cnt[r.group]||0)+r.count;});
-  let arr=Object.keys(struct).map(g=>({group:g,count:cnt[g]||0,cities:struct[g].join('، ')}));
-  Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
+  let arr;
+  if(curOffice!=='الكل'){ // عند فلترة مكتب: مجموعات هذا المكتب فقط
+    const gc=groupCities();
+    arr=Object.keys(cnt).filter(g=>cnt[g]>0).map(g=>({group:g,count:cnt[g],cities:(struct[g]||gc[g]||[]).join('، ')}));
+  } else {
+    arr=Object.keys(struct).map(g=>({group:g,count:cnt[g]||0,cities:struct[g].join('، ')}));
+    Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
+  }
   arr.sort((a,b)=>b.count-a.count);
   const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
   el.innerHTML=arr.length?arr.map(a=>{
