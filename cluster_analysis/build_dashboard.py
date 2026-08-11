@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """يبني صفحة داشبورد الفِرَق المسجَّلة (فلاتر: الفئة، الصفة، المنطقة) من teams2.json."""
-import json
+import json, datetime, os
 
 D = json.load(open("/home/user/khitba/cluster_analysis/teams2.json", encoding="utf-8"))
 MAPS = json.load(open("/home/user/khitba/cluster_analysis/_maps.json", encoding="utf-8"))
@@ -70,7 +70,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="flt"><div class="lab">صفة الفريق: <span style="font-weight:400;font-size:11px;opacity:.75">(يمكنك اختيار أكثر من خيار)</span></div><div class="tabs" id="sifaT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
  <div class="flt" id="offFlt" style="display:none"><div class="lab">مكتب الوزارة:</div><select class="rgn" id="off"></select></div>
- <div class="flt"><button class="btn g" id="dlSum" style="cursor:pointer">📷 تنزيل صورة ملخص المكاتب والفئات</button></div>
+ <div class="flt" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn g" id="dlSum" style="cursor:pointer">📷 تنزيل صورة ملخص المكاتب والفئات</button><button class="btn g" id="cmpBtn" style="cursor:pointer">📈 مقارنة اليوم بأمس</button></div>
 
  <div class="kpis" id="kpis"></div>
 
@@ -84,6 +84,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="card" id="regionPanel"></div>
  <div class="card" id="officePanel"></div>
  <div class="card" id="emptyCard" style="display:none"></div>
+ <div class="card" id="cmpCard" style="display:none"></div>
 
  <div class="card"><h3 id="cityh">الفِرَق بحسب المدينة</h3>
   <div id="gfilter"></div>
@@ -96,6 +97,7 @@ HTML = r"""<!DOCTYPE html>
 <script>
 let DATA=__DATA__;
 const C2G=__C2G__, REG=__REG__, STRUCT=__STRUCT__, GROFF=__GROFF__;
+const PREV=__PREV__, TODAY=__TODAY__;
 function structFor(age,region){
   if(region!=='الكل')return (STRUCT[region]&&STRUCT[region][age])||{};
   const m={};Object.keys(STRUCT).forEach(rg=>{const s=STRUCT[rg][age];if(s)Object.keys(s).forEach(g=>{m[g]=(m[g]||[]).concat(s[g]);});});
@@ -397,9 +399,55 @@ function drawSummaryImage(){
 }
 const _dl=document.getElementById('dlSum');
 if(_dl)_dl.onclick=()=>{ if(document.fonts&&document.fonts.ready){document.fonts.ready.then(drawSummaryImage);}else{drawSummaryImage();} };
+// ===== مقارنة اليوم بأمس =====
+function cmpRender(){
+  const el=document.getElementById('cmpCard');
+  if(!PREV){el.innerHTML='<h3>📈 مقارنة اليوم بأمس</h3><div class="muted">لا توجد لقطة أمس للمقارنة بعد — ستتوفّر المقارنة اعتبارًا من اليوم التالي.</div>';return;}
+  const today={};DATA.rows.forEach(r=>{if(r.count){const k=r.group+'|'+r.age;today[k]=(today[k]||0)+r.count;}});
+  const prev=PREV.byGA||{};
+  let tTot=0,pTot=0;Object.values(today).forEach(v=>tTot+=v);Object.values(prev).forEach(v=>pTot+=v);
+  const ageInc={};DATA.ages.forEach(a=>ageInc[a]=0);
+  const keys=new Set([...Object.keys(today),...Object.keys(prev)]);const done=[];
+  keys.forEach(k=>{const i=k.lastIndexOf('|');const g=k.slice(0,i),a=k.slice(i+1);const t=today[k]||0,p=prev[k]||0;
+    if(ageInc[a]===undefined)ageInc[a]=0;ageInc[a]+=(t-p);
+    if(t>=TARGET&&p<TARGET)done.push({group:g,age:a,count:t,prev:p});});
+  done.sort((x,y)=>DATA.ages.indexOf(x.age)-DATA.ages.indexOf(y.age)||(x.group<y.group?-1:1));
+  const inc=tTot-pTot;
+  let html='<h3>📈 مقارنة اليوم ('+TODAY+') بأمس ('+PREV.date+')</h3>';
+  html+='<div class="kpis"><div class="kpi"><div class="n" style="color:'+(inc>=0?'#7ee0a0':'#ff9a9a')+'">'+(inc>=0?'+':'')+inc+'</div><div class="l">زيادة الفِرَق عن أمس · اليوم '+tTot+' مقابل '+pTot+'</div></div>'+
+    '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done.length+'</div><div class="l">مجموعات اكتملت اليوم (لم تكن مكتملة أمس)</div></div></div>';
+  html+='<div style="margin:4px 0 14px;display:flex;flex-wrap:wrap;gap:6px">'+DATA.ages.map(a=>{const v=ageInc[a]||0;
+    return '<span style="font-size:12px;border-radius:8px;padding:3px 9px;background:'+(v>0?'#14532a':v<0?'#5a1e1e':'#16314f')+';color:'+(v>0?'#8ff0b0':v<0?'#ff9a9a':'#cfe0f0')+'">'+a+': '+(v>0?'+':'')+v+'</span>';}).join('')+'</div>';
+  html+='<h3 style="font-size:14px">المجموعات التي اكتملت اليوم</h3>';
+  html+=done.length?done.map(d=>'<div class="bar"><div class="lab" style="width:250px;white-space:normal"><b>'+d.group+'</b> <span style="color:#9fb6d0;font-size:11px">'+d.age+'</span></div>'+
+    '<div class="track"><div class="fill" style="width:100%;background:#1a9850"></div></div>'+
+    '<div class="val" style="color:#7ee0a0">'+d.count+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات جديدة اكتملت اليوم.</div>';
+  el.innerHTML=html;
+}
+const _cmp=document.getElementById('cmpBtn');
+if(_cmp)_cmp.onclick=()=>{const c=document.getElementById('cmpCard');const show=(c.style.display==='none'||!c.style.display);
+  c.style.display=show?'block':'none';if(show){cmpRender();c.scrollIntoView({behavior:'smooth',block:'start'});}};
 buildFilters();render();
 </script></body></html>"""
 
+# ===== لقطة يومية للمقارنة (اليوم مقابل أمس) =====
+_SNAP = "/home/user/khitba/cluster_analysis/snapshots.json"
+_today = datetime.date.today().isoformat()
+_cur = {}
+for _r in D["rows"]:
+    if _r["count"]:
+        _k = _r["group"] + "|" + _r["age"]
+        _cur[_k] = _cur.get(_k, 0) + _r["count"]
+_snaps = json.load(open(_SNAP, encoding="utf-8")) if os.path.exists(_SNAP) else {}
+_prev_dates = sorted(d for d in _snaps if d < _today)
+_prev_date = _prev_dates[-1] if _prev_dates else None
+_prev = _snaps.get(_prev_date) if _prev_date else None
+_snaps[_today] = _cur
+json.dump(_snaps, open(_SNAP, "w", encoding="utf-8"), ensure_ascii=False)
+_PREV = {"date": _prev_date, "byGA": _prev} if _prev is not None else None
+
+HTML = HTML.replace("__PREV__", json.dumps(_PREV, ensure_ascii=False))
+HTML = HTML.replace("__TODAY__", json.dumps(_today, ensure_ascii=False))
 HTML = HTML.replace("__DATA__", json.dumps(D, ensure_ascii=False))
 HTML = HTML.replace("__C2G__", json.dumps(MAPS["C2G"], ensure_ascii=False))
 HTML = HTML.replace("__REG__", json.dumps(MAPS["REG"], ensure_ascii=False))
