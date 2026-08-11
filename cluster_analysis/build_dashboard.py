@@ -216,10 +216,10 @@ function officePanel(el){
     const cnt={};DATA.rows.filter(r=>(r.office||'')===curOffice&&r.age===age&&sifaMatch(r)&&(curRegion==='الكل'||r.region===curRegion)).forEach(r=>cnt[r.group]=(cnt[r.group]||0)+r.count);
     let arr=Object.keys(cnt).filter(g=>cnt[g]>0).map(g=>({group:g,count:cnt[g],cities:(gc[g]||[]).join('، '),
       shared:[...(om[g]||[])].filter(o=>o!==curOffice)}));
-    // المجموعات الفارغة التابعة لهذا المكتب (من جدول المجموعة→المكتب) — تظهر بصفر
+    // كل مجموعات هذا المكتب في هذه الفئة (من جدول المجموعة→المكتب) — تظهر بصفر حيث لا فرق
     if(curRegion==='الكل'&&!curSifas.length){
-      const empt=new Set(Object.values(C2G[age]||{}).filter(g=>GROFF[g]===curOffice&&!(tot[g]>0)));
-      empt.forEach(g=>{if(!cnt[g])arr.push({group:g,count:0,cities:(gc[g]||[]).join('، '),shared:[]});});
+      [...new Set(Object.values(C2G[age]||{}))].forEach(g=>{if(GROFF[g]===curOffice&&!cnt[g])
+        arr.push({group:g,count:0,cities:(gc[g]||[]).join('، '),shared:[...(om[g]||[])].filter(o=>o!==curOffice)});});
     }
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
