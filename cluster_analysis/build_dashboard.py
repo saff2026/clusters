@@ -327,7 +327,7 @@ function buildFilters(){
   else{offFlt.style.display='none';curOffice='الكل';}
 }
 // ===== تحديث من إكسل (يعيد البناء من صفحة بيانات التسجيل) =====
-const CANON={'جيزان':'جازان'}, SIFA={'هواة':'هواة','اكاديمية':'أكاديمية','اكاديمة':'أكاديمية','نادي':'نادي','نالدي خاص':'نادي'};
+const CANON={'جيزان':'جازان','الجوف':'سكاكا'}, SIFA={'هواة':'هواة','اكاديمية':'أكاديمية','اكاديمة':'أكاديمية','نادي':'نادي','نالدي خاص':'نادي'};
 const _fileInp=document.getElementById('file');
 if(_fileInp)_fileInp.onchange=e=>{const f=e.target.files[0];if(!f)return;
   const rd=new FileReader();rd.onload=ev=>{try{

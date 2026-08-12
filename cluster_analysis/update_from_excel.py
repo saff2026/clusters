@@ -12,7 +12,7 @@ from collections import defaultdict, Counter
 
 BASE = "/home/user/khitba/cluster_analysis/"
 XLSX = sys.argv[1] if len(sys.argv) > 1 else BASE + "latest.xlsx"
-CANON = {"جيزان": "جازان"}
+CANON = {"جيزان": "جازان", "الجوف": "سكاكا"}
 SIFA = {"هواة": "هواة", "اكاديمية": "أكاديمية", "اكاديمة": "أكاديمية",
         "أكاديمية": "أكاديمية", "نادي": "نادي", "نالدي خاص": "نادي"}
 AGES_59 = ["تحت 5", "تحت 7", "تحت 9"]
