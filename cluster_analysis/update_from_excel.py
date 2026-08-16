@@ -25,7 +25,8 @@ wb = openpyxl.load_workbook(XLSX, read_only=True, data_only=True)
 # ========== 1) التصنيف من «عدد الفرق لكل مدينة» ==========
 ws = wb["عدد الفرق لكل مدينة"]
 rows = list(ws.iter_rows(values_only=True))
-C2G, STRUCT = {}, {}
+C2G = {}
+recs = []  # (age, city, grp)
 for r in rows[2:]:
     if not r:
         continue
@@ -35,18 +36,10 @@ for r in rows[2:]:
     if not age or not city or not grp:
         continue
     city = CANON.get(city, city)
-    region = REG.get(city, "غير محدد")
     C2G.setdefault(age, {})[city] = grp
-    g = STRUCT.setdefault(region, {}).setdefault(age, {}).setdefault(grp, [])
-    if city not in g:
-        g.append(city)
-for rg in STRUCT.values():
-    for ag in rg.values():
-        for grp in ag:
-            ag[grp] = sorted(ag[grp])
-M["C2G"], M["STRUCT"] = C2G, STRUCT
+    recs.append((age, city, grp))
 
-# ربط المجموعة -> المكتب/المنطقة من صفحة «المدخلات» (المصدر الرسمي للمكاتب)
+# ربط المجموعة -> المكتب/المنطقة من صفحة «المدخلات» (المصدر الرسمي)
 GROFF, GRREG = {}, {}
 if "المدخلات" in wb.sheetnames:
     wi = list(wb["المدخلات"].iter_rows(values_only=True))
@@ -60,7 +53,32 @@ if "المدخلات" in wb.sheetnames:
             GROFF[g] = off
         if g and reg:
             GRREG[g] = reg
-M["GROFF"], M["GRREG"] = GROFF, GRREG
+
+# تطبيع أسماء المناطق المختصرة (من المدخلات) إلى الأسماء المعتمدة في REG
+REGNORM = {}
+for canon in M["regions"]:
+    for short in set(GRREG.values()):
+        if short and short in canon:
+            REGNORM[short] = canon
+
+# معالجة ذاتية: أي مدينة مصنّفة لكنها غير موجودة في REG تأخذ منطقة مجموعتها
+for age, city, grp in recs:
+    if city not in REG and grp in GRREG:
+        REG[city] = REGNORM.get(GRREG[grp], GRREG[grp])
+
+# بناء STRUCT بعد معالجة المناطق
+STRUCT = {}
+for age, city, grp in recs:
+    region = REG.get(city, "غير محدد")
+    g = STRUCT.setdefault(region, {}).setdefault(age, {}).setdefault(grp, [])
+    if city not in g:
+        g.append(city)
+for rg in STRUCT.values():
+    for ag in rg.values():
+        for grp in ag:
+            ag[grp] = sorted(ag[grp])
+M["C2G"], M["STRUCT"] = C2G, STRUCT
+M["GROFF"], M["GRREG"], M["REG"] = GROFF, GRREG, REG
 json.dump(M, open(BASE + "_maps.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
 
 # ========== 2) بيانات الداشبورد من «بيانات التسجيل» ==========
