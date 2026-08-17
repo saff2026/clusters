@@ -192,7 +192,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="tabs" id="ageT"></div>
  <div id="map"></div>
  <div class="kpis" id="kpis"></div>
- <div class="card" id="chartCard" style="display:none;margin-bottom:16px"><h3>تفصيل المباريات واللاعبين لكل فئة</h3><div id="chart"></div></div>
+ <div class="card" id="chartCard" style="display:none;margin-bottom:16px"><h3>تفصيل المباريات لكل فئة</h3><div id="chart"></div></div>
  <div class="card"><h3 id="ttl"></h3>
    <div id="list"></div>
  </div>
@@ -210,11 +210,9 @@ function nPlayer(n){return arCount(n,'لاعب واحد','لاعبان','لاع�
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
 function chartHTML(){
   const ages=MD.ages,P=MD.perAge;
-  const mm=Math.max(1,...ages.map(a=>P[a].m)),mp=Math.max(1,...ages.map(a=>P[a].p));
-  return '<div class="clegend"><span class="dot m"></span> المباريات <span class="dot p"></span> اللاعبون</div>'+
-    ages.map(a=>{const d=P[a];return '<div class="crow"><div class="cage">'+a+'</div><div class="cbars">'+
+  const mm=Math.max(1,...ages.map(a=>P[a].m));
+  return ages.map(a=>{const d=P[a];return '<div class="crow"><div class="cage">'+a+'</div><div class="cbars">'+
       '<div class="cbar"><div class="cfill m" style="width:'+(100*d.m/mm).toFixed(1)+'%"></div><span class="cval">'+nMatch(d.m)+'</span></div>'+
-      '<div class="cbar"><div class="cfill p" style="width:'+(100*d.p/mp).toFixed(1)+'%"></div><span class="cval">'+nPlayer(d.p)+'</span></div>'+
       '</div></div>';}).join('');
 }
 function shortAge(a){return a.replace('تحت ','ت');}
