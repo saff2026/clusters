@@ -89,7 +89,25 @@ for g in complete_groups:
                       "lat": ll[0] if ll else None, "lon": ll[1] if ll else None})
 allGroups.sort(key=lambda x: -x["totalMatches"])
 
-MDATA = {"ages": T["ages"], "byAge": byAge, "allGroups": allGroups, "target": TARGET}
+# عدد اللاعبين (للشارت المجمّع في «جميع الفئات») — من players_data.json
+PLAYERS_SRC = {}
+try:
+    PLAYERS_SRC = json.load(open(BASE + "players_data.json", encoding="utf-8"))
+except Exception:
+    pass
+def players_of(age, g):
+    d = PLAYERS_SRC.get(age + "|" + g)
+    return d["p"] if d else 0
+
+# إجمالي كل فئة (على المجموعات المكتملة): مباريات + لاعبون + فرق
+perAge = {}
+for age in T["ages"]:
+    perAge[age] = {"m": sum(x["matches"] for x in byAge[age]),
+                   "p": sum(players_of(age, x["group"]) for x in byAge[age]),
+                   "n": sum(x["n"] for x in byAge[age])}
+
+MDATA = {"ages": T["ages"], "byAge": byAge, "allGroups": allGroups,
+         "perAge": perAge, "target": TARGET}
 
 HTML = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
@@ -104,10 +122,10 @@ HTML = r"""<!DOCTYPE html>
    position:sticky;top:0;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,.4)}
  .top .logo{height:46px;width:auto;filter:brightness(0) invert(1)}
  .top h1{margin:0;font-size:19px;font-weight:800}
- .nav{display:flex;gap:8px;margin-right:auto}
- .navlink{background:rgba(255,255,255,.14);color:#eafff3;border-radius:20px;padding:6px 15px;
-   text-decoration:none;font-size:14px;font-weight:700}
- .navlink.on{background:#ffd166;color:#04150e}
+ .nav{display:flex;gap:8px;margin-bottom:14px}
+ .navlink{background:#0b3524;border:1px solid #12563a;color:#eafff3;border-radius:20px;padding:8px 18px;
+   text-decoration:none;font-size:14px;font-weight:800}
+ .navlink.on{background:#ffd166;color:#04150e;border-color:#ffd166}
  .wrap{max-width:1200px;margin:0 auto;padding:18px}
  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
  .tab{background:#0d4b32;border:1px solid #1c7a52;color:#eafff3;border-radius:20px;padding:7px 16px;
@@ -136,6 +154,15 @@ HTML = r"""<!DOCTYPE html>
  .rhd{color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding:10px 2px 6px;margin-top:10px}
  .rhd:first-child{border-top:0;margin-top:0}
  .rhd .rhdt{color:#8fdcb4;font-size:12px;font-weight:700}
+ .clegend{font-size:12.5px;color:#8fdcb4;margin-bottom:14px;font-weight:700}
+ .clegend .dot{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin:0 6px 0 14px}
+ .dot.m,.cfill.m{background:#2fe6b8} .dot.p,.cfill.p{background:#ffd166}
+ .crow{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+ .crow .cage{width:56px;flex-shrink:0;font-weight:800;font-size:13px;color:#eafff3}
+ .crow .cbars{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+ .cbar{display:flex;align-items:center;gap:8px}
+ .cfill{height:15px;border-radius:5px;min-width:3px}
+ .cval{font-size:11.5px;font-weight:700;color:#cdeede;white-space:nowrap}
  .trow{padding:7px 10px;border-bottom:1px solid #0d3a26;font-size:13.5px}
  .trow b{font-size:14px} .trow .tot{color:#ffd166;font-weight:800;margin-right:6px}
  .trow .sub{font-size:10.5px;color:#7fbfa0;margin-top:2px;font-weight:400}
@@ -156,17 +183,17 @@ HTML = r"""<!DOCTYPE html>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
  <h1>الخريطة وعدد المباريات لكل مجموعة</h1>
+</div>
+<div class="wrap">
  <nav class="nav">
    <a class="navlink on" href="matches.html">عدد المباريات</a>
    <a class="navlink" href="players.html">عدد اللاعبين</a>
  </nav>
-</div>
-<div class="wrap">
  <div class="tabs" id="ageT"></div>
  <div id="map"></div>
  <div class="kpis" id="kpis"></div>
+ <div class="card" id="chartCard" style="display:none;margin-bottom:16px"><h3>تفصيل المباريات واللاعبين لكل فئة</h3><div id="chart"></div></div>
  <div class="card"><h3 id="ttl"></h3>
-   
    <div id="list"></div>
  </div>
 </div>
@@ -179,7 +206,17 @@ function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
 function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
+function nPlayer(n){return arCount(n,'لاعب واحد','لاعبان','لاعبين','لاعبًا');}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
+function chartHTML(){
+  const ages=MD.ages,P=MD.perAge;
+  const mm=Math.max(1,...ages.map(a=>P[a].m)),mp=Math.max(1,...ages.map(a=>P[a].p));
+  return '<div class="clegend"><span class="dot m"></span> المباريات <span class="dot p"></span> اللاعبون</div>'+
+    ages.map(a=>{const d=P[a];return '<div class="crow"><div class="cage">'+a+'</div><div class="cbars">'+
+      '<div class="cbar"><div class="cfill m" style="width:'+(100*d.m/mm).toFixed(1)+'%"></div><span class="cval">'+nMatch(d.m)+'</span></div>'+
+      '<div class="cbar"><div class="cfill p" style="width:'+(100*d.p/mp).toFixed(1)+'%"></div><span class="cval">'+nPlayer(d.p)+'</span></div>'+
+      '</div></div>';}).join('');
+}
 function shortAge(a){return a.replace('تحت ','ت');}
 let map=null, layer=null;
 try{
@@ -225,6 +262,9 @@ function render(){
   document.getElementById('ageT').innerHTML=AGES.map(a=>'<button class="tab'+(a===cur?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   document.querySelectorAll('#ageT .tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
   const K=document.getElementById('kpis'), L2=document.getElementById('list');
+  const CC=document.getElementById('chartCard');
+  if(cur===ALL){CC.style.display='block';document.getElementById('chart').innerHTML=chartHTML();}
+  else CC.style.display='none';
   if(cur===ALL){
     const g=MD.allGroups, totM=g.reduce((s,x)=>s+x.totalMatches,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
     K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
