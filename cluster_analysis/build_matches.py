@@ -129,6 +129,9 @@ HTML = r"""<!DOCTYPE html>
  .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
  .row b{font-size:15px} .row .tot{color:#ffd166;font-weight:800}
  .row .sub{font-size:11.5px;color:#8ff0b0;margin-top:4px;line-height:1.9;font-weight:500}
+ .trow{padding:7px 10px;border-bottom:1px solid #0d3a26;font-size:13.5px}
+ .trow b{font-size:14px} .trow .tot{color:#ffd166;font-weight:800;margin-right:6px}
+ .trow .sub{font-size:10.5px;color:#7fbfa0;margin-top:2px;font-weight:400}
  .hd{display:flex;gap:10px;color:#8fdcb4;font-size:11px;font-weight:700;padding:0 0 4px;border-bottom:1px solid #12563a;margin-bottom:8px}
  .hd .a{flex:1}.hd .c{width:70px;text-align:center}.hd .d{width:70px;text-align:center}
  .gtip{background:#04150e;border:1px solid #2fe6b8;color:#eafff3;border-radius:8px;font-family:'Tajawal';
@@ -241,12 +244,9 @@ function buildTables(){
     MD.ages.forEach(age=>{const gs=R[rg][age];if(!gs||!gs.length)return;
       const at=gs.reduce((s,x)=>s+x.matches,0);
       sec+='<div style="margin:8px 0 3px;color:#8fdcb4;font-weight:700">'+age+' <span style="color:#7fbfa0;font-size:11px">('+nMatch(at)+')</span></div>';
-      sec+='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px">';
       gs.slice().sort((a,b)=>b.matches-a.matches).forEach(x=>{
-        sec+='<tr><td style="padding:4px 8px;border-bottom:1px solid #0d3a26"><b>'+x.group+'</b>'+(x.cities?'<div style="color:#7fbfa0;font-size:10px;font-weight:400">('+x.cities+')</div>':'')+'</td>'+
-             '<td style="padding:4px 8px;border-bottom:1px solid #0d3a26;color:#8fdcb4;width:80px;text-align:center">'+nTeam(x.n)+'</td>'+
-             '<td style="padding:4px 8px;border-bottom:1px solid #0d3a26;color:#ffd166;font-weight:700;width:100px;text-align:center">'+nMatch(x.matches)+'</td></tr>';});
-      sec+='</table>';});
+        sec+='<div class="trow"><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nMatch(x.matches)+'</span>'+
+             (x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div>';});});
     sec+='</div>';
     html+=sec;});
   return '<div style="color:#eafff3;font-weight:800;margin-bottom:6px">إجمالي المباريات الكلي: '+nMatch(grand)+'</div>'+html;
