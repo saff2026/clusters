@@ -129,6 +129,9 @@ HTML = r"""<!DOCTYPE html>
  .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
  .row b{font-size:15px} .row .tot{color:#ffd166;font-weight:800}
  .row .sub{font-size:11.5px;color:#8ff0b0;margin-top:4px;line-height:1.9;font-weight:500}
+ .rhd{color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding:10px 2px 6px;margin-top:10px}
+ .rhd:first-child{border-top:0;margin-top:0}
+ .rhd .rhdt{color:#8fdcb4;font-size:12px;font-weight:700}
  .trow{padding:7px 10px;border-bottom:1px solid #0d3a26;font-size:13.5px}
  .trow b{font-size:14px} .trow .tot{color:#ffd166;font-weight:800;margin-right:6px}
  .trow .sub{font-size:10.5px;color:#7fbfa0;margin-top:2px;font-weight:400}
@@ -202,6 +205,15 @@ function drawMap(){
       nTeam(x.n)+' — '+nMatch(x.matches)));
   }
 }
+function regionSections(items,matchesOf,teamsOf,rowFn){
+  const R={},order=[];
+  items.forEach(x=>{const r=x.region||'غير محدد';if(!R[r]){R[r]=[];order.push(r);}R[r].push(x);});
+  order.sort((a,b)=>R[b].reduce((s,x)=>s+matchesOf(x),0)-R[a].reduce((s,x)=>s+matchesOf(x),0));
+  return order.map(r=>{
+    const tm=R[r].reduce((s,x)=>s+matchesOf(x),0), tt=R[r].reduce((s,x)=>s+teamsOf(x),0);
+    return '<div class="rhd">'+r+' <span class="rhdt">'+nTeam(tt)+' · '+nMatch(tm)+'</span></div>'+R[r].map(rowFn).join('');
+  }).join('');
+}
 function render(){
   document.getElementById('ageT').innerHTML=AGES.map(a=>'<button class="tab'+(a===cur?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   document.querySelectorAll('#ageT .tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
@@ -211,18 +223,16 @@ function render(){
     K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
       '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
-    const mx=Math.max(1,...g.map(x=>x.totalMatches));
-    L2.innerHTML=g.map(x=>{
+    L2.innerHTML=regionSections(g,x=>x.totalMatches,x=>x.totalTeams,x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nTeam(d.n)+' — '+nMatch(d.m);}).join('<br>');
-      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+' <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';}).join('');
+      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';});
   } else {
     const arr=MD.byAge[cur]||[], totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
     K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
       '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
-    const mx=Math.max(1,...arr.map(x=>x.matches));
-    L2.innerHTML=arr.length?arr.map(x=>
-      '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+' <span class="tot">'+nTeam(x.n)+' · '+nMatch(x.matches)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
+    L2.innerHTML=arr.length?regionSections(arr,x=>x.matches,x=>x.n,x=>
+      '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nMatch(x.matches)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>'):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
   }
   document.querySelectorAll('#list .row.clk').forEach(b=>b.onclick=()=>{
     const la=parseFloat(b.dataset.lat), lo=parseFloat(b.dataset.lon);
