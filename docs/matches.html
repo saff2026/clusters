@@ -24,7 +24,7 @@
  .card{background:#0b3524;border:1px solid #12563a;border-radius:12px;padding:16px}
  .card h3{margin:0 0 12px;font-size:15px;color:#ffd166}
  .bar{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
- .bar .lab{width:250px;flex-shrink:0;white-space:normal}
+ .bar .lab{flex:1;min-width:0;white-space:normal}
  .bar .lab .sub{font-size:10px;color:#7fbfa0;margin-top:2px;font-weight:400}
  .bar .track{flex:1;background:#04150e;border-radius:6px;height:22px;overflow:hidden}
  .bar .fill{height:100%;background:linear-gradient(90deg,#159a80,#2fe6b8);border-radius:6px;min-width:3px}
@@ -32,8 +32,12 @@
  .bar .val{width:70px;text-align:center;font-weight:800;color:#ffd166}
  .bar .teams{width:70px;text-align:center;color:#8fdcb4;font-size:12px}
  .muted{color:#8fdcb4;font-size:12px}
+ .row{padding:9px 10px;border-bottom:1px solid #0d3a26;font-size:14px}
+ .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
+ .row b{font-size:15px} .row .tot{color:#ffd166;font-weight:800}
+ .row .sub{font-size:11.5px;color:#8ff0b0;margin-top:4px;line-height:1.9;font-weight:500}
  .hd{display:flex;gap:10px;color:#8fdcb4;font-size:11px;font-weight:700;padding:0 0 4px;border-bottom:1px solid #12563a;margin-bottom:8px}
- .hd .a{width:250px}.hd .b{flex:1}.hd .c{width:70px;text-align:center}.hd .d{width:70px;text-align:center}
+ .hd .a{flex:1}.hd .c{width:70px;text-align:center}.hd .d{width:70px;text-align:center}
  .gtip{background:#04150e;border:1px solid #2fe6b8;color:#eafff3;border-radius:8px;font-family:'Tajawal';
    font-size:12px;font-weight:700;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.5);padding:5px 9px;line-height:1.5}
  .gtip b{color:#ffd166;font-size:13px}
@@ -55,7 +59,7 @@
  <div id="map"></div>
  <div class="kpis" id="kpis"></div>
  <div class="card"><h3 id="ttl"></h3>
-   <div class="hd"><div class="a">المجموعة</div><div class="b"></div><div class="c">الفِرَق</div><div class="d">المباريات</div></div>
+   
    <div id="list"></div>
  </div>
  <div style="margin:14px 0"><button class="tab" id="tblBtn" style="background:#ffd166;color:#04150e;border-color:#ffd166">📋 جداول المباريات (المنطقة ← الفئة ← المجموعة)</button></div>
@@ -116,10 +120,7 @@ function render(){
     const mx=Math.max(1,...g.map(x=>x.totalMatches));
     L2.innerHTML=g.map(x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nTeam(d.n)+' — '+nMatch(d.m);}).join('<br>');
-      return '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
-        '<div class="sub">'+ages+'</div></div>'+
-        '<div style="flex:1"></div>'+
-        '<div class="teams">'+x.totalTeams+'</div><div class="val">'+x.totalMatches+'</div></div>';}).join('');
+      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+' <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';}).join('');
   } else {
     const arr=MD.byAge[cur]||[], totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
     K.innerHTML='<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">مجموعات مكتملة</div></div>'+
@@ -128,12 +129,9 @@ function render(){
     document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
     const mx=Math.max(1,...arr.map(x=>x.matches));
     L2.innerHTML=arr.length?arr.map(x=>
-      '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
-        (x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div>'+
-      '<div style="flex:1"></div>'+
-      '<div class="teams">'+nTeam(x.n)+'</div><div class="val">'+x.matches+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
+      '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+' <span class="tot">'+nTeam(x.n)+' · '+nMatch(x.matches)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
   }
-  document.querySelectorAll('#list .bar.clk').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#list .row.clk').forEach(b=>b.onclick=()=>{
     const la=parseFloat(b.dataset.lat), lo=parseFloat(b.dataset.lon);
     if(!isNaN(la))zoomTo(la,lo);
   });
