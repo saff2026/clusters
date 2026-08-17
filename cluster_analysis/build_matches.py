@@ -211,7 +211,7 @@ function render(){
       const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nTeam(d.n)+' — '+nMatch(d.m);}).join('<br>');
       return '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
         '<div class="sub">'+ages+'</div></div>'+
-        '<div class="track"><div class="fill" style="width:'+(x.totalMatches/mx*100)+'%"></div></div>'+
+        '<div style="flex:1"></div>'+
         '<div class="teams">'+x.totalTeams+'</div><div class="val">'+x.totalMatches+'</div></div>';}).join('');
   } else {
     const arr=MD.byAge[cur]||[], totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
@@ -223,7 +223,7 @@ function render(){
     L2.innerHTML=arr.length?arr.map(x=>
       '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
         (x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div>'+
-      '<div class="track"><div class="fill" style="width:'+(x.matches/mx*100)+'%"></div></div>'+
+      '<div style="flex:1"></div>'+
       '<div class="teams">'+nTeam(x.n)+'</div><div class="val">'+x.matches+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
   }
   document.querySelectorAll('#list .bar.clk').forEach(b=>b.onclick=()=>{
