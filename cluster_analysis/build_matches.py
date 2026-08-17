@@ -35,36 +35,57 @@ def centroid(cities):
     return [round(sum(p[0] for p in pts) / len(pts), 5),
             round(sum(p[1] for p in pts) / len(pts), 5)]
 
+# عدد الفرق والمباريات لكل (فئة، مجموعة) — من صفحة «عدد المباريات» في الإكسل مباشرةً
+MDATA_SRC = {}
+try:
+    MDATA_SRC = json.load(open(BASE + "matches_data.json", encoding="utf-8"))
+except Exception:
+    pass
+def teams_of(age, g):
+    d = MDATA_SRC.get(age + "|" + g)
+    return d["n"] if d else 0
+def matches_src(age, g):
+    d = MDATA_SRC.get(age + "|" + g)
+    return d["m"] if d else 0
+
 byga = defaultdict(int)
 for r in T["rows"]:
     byga[(r["age"], r["group"])] += r["count"]
 
-# لكل فئة: المجموعات المكتملة
+# كل مجموعات كل فئة (من صفحة عدد المباريات) — تظهر إن كانت الفرق ≥6
+groups_by_age = defaultdict(list)
+for key in MDATA_SRC:
+    a, g = key.split("|", 1)
+    groups_by_age[a].append(g)
+
+# لكل فئة: المجموعات المكتملة (الفرق والمباريات من الإكسل)
 byAge = {}
 for age in T["ages"]:
     arr = []
-    for (a, g), n in byga.items():
-        if a == age and n >= TARGET and g != "(غير مصنّف)":
+    for g in groups_by_age.get(age, []):
+        n = teams_of(age, g)
+        if n >= TARGET and g != "(غير مصنّف)":
             ll = centroid(gc.get(g, []))
             arr.append({"group": g, "region": greg.get(g, ""),
                         "cities": "، ".join(sorted(gc.get(g, []))),
-                        "n": n, "matches": n * (n - 1) // 2,
+                        "n": n, "matches": matches_src(age, g),
                         "lat": ll[0] if ll else None, "lon": ll[1] if ll else None})
     arr.sort(key=lambda x: -x["matches"])
     byAge[age] = arr
 
-# «جميع الفئات»: المجموعات المكتملة في فئة واحدة على الأقل، مع عدد الفرق لكل فئة
+# «جميع الفئات»: المجموعات المكتملة في فئة واحدة على الأقل، مع الفرق والمباريات لكل فئة
 complete_groups = {x["group"] for age in T["ages"] for x in byAge[age]}
 allGroups = []
 for g in complete_groups:
-    # الفئات المكتملة فقط (≥6) — لتتّسق الفرق والمباريات
-    teamsByAge = {a: byga.get((a, g), 0) for a in T["ages"] if byga.get((a, g), 0) >= TARGET}
-    totMatches = sum(n * (n - 1) // 2 for n in teamsByAge.values())
+    teamsByAge = {a: {"n": teams_of(a, g), "m": matches_src(a, g)}
+                  for a in T["ages"] if teams_of(a, g) >= TARGET}
+    totMatches = sum(v["m"] for v in teamsByAge.values())
+    totTeams = sum(v["n"] for v in teamsByAge.values())
     ll = centroid(gc.get(g, []))
     allGroups.append({"group": g, "region": greg.get(g, ""),
                       "cities": "، ".join(sorted(gc.get(g, []))),
                       "teamsByAge": teamsByAge, "totalMatches": totMatches,
-                      "totalTeams": sum(teamsByAge.values()),
+                      "totalTeams": totTeams,
                       "lat": ll[0] if ll else None, "lon": ll[1] if ll else None})
 allGroups.sort(key=lambda x: -x["totalMatches"])
 
@@ -164,9 +185,9 @@ function drawMap(){
   if(cur===ALL){
     const mx=Math.max(1,...MD.allGroups.map(x=>x.totalMatches));
     MD.allGroups.forEach(x=>{
-      const ages=MD.ages.filter(a=>x.teamsByAge[a]>0)
-        .map(a=>'<div class="ag">'+a+': '+nTeam(x.teamsByAge[a])+'</div>').join('');
-      const nums=(ages||'<div class="z">لا فرق</div>')+'<div style="color:#ffd166;margin-top:4px">إجمالي المباريات: '+x.totalMatches+'</div>';
+      const ages=MD.ages.filter(a=>x.teamsByAge[a])
+        .map(a=>{const d=x.teamsByAge[a];return '<div class="ag">'+a+': '+nTeam(d.n)+' — '+nMatch(d.m)+'</div>';}).join('');
+      const nums=(ages||'<div class="z">لا فرق</div>')+'<div style="color:#ffd166;margin-top:4px">إجمالي المباريات: '+nMatch(x.totalMatches)+'</div>';
       marker(x,7+11*(x.totalMatches/mx),x.group.replace('مجموعة ',''),nums);
     });
   } else {
@@ -187,7 +208,7 @@ function render(){
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
     const mx=Math.max(1,...g.map(x=>x.totalMatches));
     L2.innerHTML=g.map(x=>{
-      const ages=MD.ages.filter(a=>x.teamsByAge[a]>0).map(a=>a+': '+nTeam(x.teamsByAge[a])).join('<br>');
+      const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nTeam(d.n)+' — '+nMatch(d.m);}).join('<br>');
       return '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
         '<div class="sub">'+ages+'</div></div>'+
         '<div class="track"><div class="fill" style="width:'+(x.totalMatches/mx*100)+'%"></div></div>'+

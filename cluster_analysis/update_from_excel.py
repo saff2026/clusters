@@ -144,6 +144,22 @@ excel_groups = {"5-9": scheme_groups(AGES_59), "11-14": scheme_groups(AGES_1114)
 json.dump(excel_groups, open(BASE + "excel_groups.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=0)
 
+# ========== 4) عدد المباريات والفرق لكل (فئة، مجموعة) — من صفحة «عدد المباريات» ==========
+matches_data = {}
+if "عدد المباريات" in wb.sheetnames:
+    wmr = list(wb["عدد المباريات"].iter_rows(values_only=True))
+    for r in wmr[2:]:
+        if not r or len(r) < 7:
+            continue
+        age = str(r[1]).strip() if r[1] else ""
+        grp = str(r[2]).strip() if r[2] else ""
+        n = r[5] if isinstance(r[5], (int, float)) else 0
+        mv = r[6] if isinstance(r[6], (int, float)) else 0
+        if age and grp:
+            matches_data[age + "|" + grp] = {"n": int(n), "m": int(mv)}
+json.dump(matches_data, open(BASE + "matches_data.json", "w", encoding="utf-8"),
+          ensure_ascii=False, indent=0)
+
 print("تم التحديث من:", XLSX)
 print("  تصنيف: مدن=%d مجموعات=%d" % (
     len({c for ag in C2G.values() for c in ag}),
