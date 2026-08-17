@@ -811,6 +811,12 @@ function bootstrap(){
     }).catch(()=>{});}
 }
 bootstrap();
+// وضع التضمين (embed=1): إخفاء الشريط الجانبي وخيارات العرض على الخريطة — تبقى الخريطة فقط
+try{ if(new URLSearchParams(location.search).has('embed')){
+  var _sd=document.getElementById('side'); if(_sd)_sd.style.display='none';
+  document.querySelectorAll('.mapopts').forEach(function(e){e.style.display='none';});
+  setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} },250);
+} }catch(e){}
 </script></body></html>"""
 
 import datetime
