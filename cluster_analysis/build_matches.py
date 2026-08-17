@@ -183,7 +183,7 @@ function marker(x,radius,name,numbers){
   if(x.lat==null||!layer)return;
   const cm=L.circleMarker([x.lat,x.lon],{radius:radius,color:'#04150e',weight:1.5,fillColor:'#2fe6b8',fillOpacity:.9})
    .bindTooltip(name,{permanent:true,direction:'center',className:'gtip'})
-   .bindPopup('<b>'+name+'</b><br>'+numbers,{className:'gpop',maxWidth:260})
+   .bindPopup('<b>'+name+'</b>'+(x.region?' <span style="color:#8fdcb4;font-size:11px;font-weight:600">'+x.region+'</span>':'')+'<br>'+numbers,{className:'gpop',maxWidth:260})
    .on('click',function(){zoomTo(x.lat,x.lon);});
   cm.addTo(layer);
 }
@@ -209,8 +209,7 @@ function render(){
   const K=document.getElementById('kpis'), L2=document.getElementById('list');
   if(cur===ALL){
     const g=MD.allGroups, totM=g.reduce((s,x)=>s+x.totalMatches,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
-    K.innerHTML='<div class="kpi"><div class="n">'+g.length+'</div><div class="l">مجموعات مكتملة</div></div>'+
-      '<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
+    K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
       '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
     const mx=Math.max(1,...g.map(x=>x.totalMatches));
@@ -219,8 +218,7 @@ function render(){
       return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+' <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';}).join('');
   } else {
     const arr=MD.byAge[cur]||[], totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
-    K.innerHTML='<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">مجموعات مكتملة</div></div>'+
-      '<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
+    K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
       '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
     const mx=Math.max(1,...arr.map(x=>x.matches));
