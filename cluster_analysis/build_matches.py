@@ -158,8 +158,7 @@ HTML = r"""<!DOCTYPE html>
    
    <div id="list"></div>
  </div>
- <div style="margin:14px 0"><button class="tab" id="tblBtn" style="background:#ffd166;color:#04150e;border-color:#ffd166">📋 جداول المباريات (المنطقة ← الفئة ← المجموعة)</button></div>
- <div class="card" id="tablesCard" style="display:none"><h3>جداول المباريات حسب المنطقة ثم الفئة ثم المجموعة (المكتملة فقط)</h3><div id="tables"></div></div>
+ <div class="card" id="tablesCard" style="margin-top:14px"><h3>جداول المباريات حسب المنطقة ثم الفئة ثم المجموعة (المكتملة فقط)</h3><div id="tables"></div></div>
 </div>
 <script>
 const MD=__MDATA__;
@@ -249,12 +248,8 @@ function buildTables(){
     html+=sec;});
   return '<div style="color:#eafff3;font-weight:800;margin-bottom:6px">إجمالي المباريات الكلي: '+nMatch(grand)+'</div>'+html;
 }
-document.getElementById('tblBtn').onclick=function(){
-  const c=document.getElementById('tablesCard');const show=(c.style.display==='none'||!c.style.display);
-  c.style.display=show?'block':'none';
-  if(show){document.getElementById('tables').innerHTML=buildTables();c.scrollIntoView({behavior:'smooth',block:'start'});}
-};
 render();
+document.getElementById('tables').innerHTML=buildTables();
 setTimeout(()=>{try{map&&map.invalidateSize();}catch(e){}},300);
 </script>
 </body></html>"""
