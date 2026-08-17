@@ -99,6 +99,7 @@ HTML = r"""<!DOCTYPE html>
  .bar .lab .sub{font-size:10px;color:#7fbfa0;margin-top:2px;font-weight:400}
  .bar .track{flex:1;background:#04150e;border-radius:6px;height:22px;overflow:hidden}
  .bar .fill{height:100%;background:linear-gradient(90deg,#159a80,#2fe6b8);border-radius:6px;min-width:3px}
+ .bar.clk{cursor:pointer;border-radius:8px;padding:4px 6px;margin:1px -6px 8px} .bar.clk:hover{background:#0d4b32}
  .bar .val{width:70px;text-align:center;font-weight:800;color:#ffd166}
  .bar .teams{width:70px;text-align:center;color:#8fdcb4;font-size:12px}
  .muted{color:#8fdcb4;font-size:12px}
@@ -142,10 +143,12 @@ try{
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:11,minZoom:4}).addTo(map);
   layer=L.layerGroup().addTo(map);
 }catch(e){ var _m=document.getElementById('map'); if(_m)_m.style.display='none'; }
+function zoomTo(lat,lon){ if(map&&lat!=null){ map.flyTo([lat,lon],9,{duration:.6}); document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'}); } }
 function marker(x,radius,html){
   if(x.lat==null||!layer)return;
   L.circleMarker([x.lat,x.lon],{radius:radius,color:'#04150e',weight:1.5,fillColor:'#2fe6b8',fillOpacity:.9})
-   .bindTooltip(html,{permanent:true,direction:'center',className:'gtip'}).addTo(layer);
+   .bindTooltip(html,{permanent:true,direction:'center',className:'gtip'})
+   .on('click',function(){zoomTo(x.lat,x.lon);}).addTo(layer);
 }
 function drawMap(){
   if(!map||!layer)return; layer.clearLayers();
@@ -153,8 +156,8 @@ function drawMap(){
     const mx=Math.max(1,...MD.allGroups.map(x=>x.totalMatches));
     MD.allGroups.forEach(x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a]>0)
-        .map(a=>'<span class="ag">'+shortAge(a)+':'+x.teamsByAge[a]+'</span>').join(' · ');
-      marker(x,7+11*(x.totalMatches/mx),'<b>'+x.group.replace('مجموعة ','')+'</b><br>'+(ages||'<span class="z">لا فرق</span>'));
+        .map(a=>'<div class="ag">'+a+': '+nTeam(x.teamsByAge[a])+'</div>').join('');
+      marker(x,7+11*(x.totalMatches/mx),'<b>'+x.group.replace('مجموعة ','')+'</b>'+(ages||'<div class="z">لا فرق</div>'));
     });
   } else {
     const arr=MD.byAge[cur]||[]; const mx=Math.max(1,...arr.map(x=>x.matches));
@@ -173,8 +176,8 @@ function render(){
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
     const mx=Math.max(1,...g.map(x=>x.totalMatches));
     L2.innerHTML=g.map(x=>{
-      const ages=MD.ages.filter(a=>x.teamsByAge[a]>0).map(a=>shortAge(a)+':'+x.teamsByAge[a]).join(' · ');
-      return '<div class="bar"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
+      const ages=MD.ages.filter(a=>x.teamsByAge[a]>0).map(a=>a+': '+nTeam(x.teamsByAge[a])).join('<br>');
+      return '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
         '<div class="sub">'+ages+'</div></div>'+
         '<div class="track"><div class="fill" style="width:'+(x.totalMatches/mx*100)+'%"></div></div>'+
         '<div class="teams">'+x.totalTeams+'</div><div class="val">'+x.totalMatches+'</div></div>';}).join('');
@@ -186,11 +189,15 @@ function render(){
     document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
     const mx=Math.max(1,...arr.map(x=>x.matches));
     L2.innerHTML=arr.length?arr.map(x=>
-      '<div class="bar"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
+      '<div class="bar clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
         (x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div>'+
       '<div class="track"><div class="fill" style="width:'+(x.matches/mx*100)+'%"></div></div>'+
       '<div class="teams">'+nTeam(x.n)+'</div><div class="val">'+x.matches+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
   }
+  document.querySelectorAll('#list .bar.clk').forEach(b=>b.onclick=()=>{
+    const la=parseFloat(b.dataset.lat), lo=parseFloat(b.dataset.lon);
+    if(!isNaN(la))zoomTo(la,lo);
+  });
   drawMap();
 }
 function buildTables(){
