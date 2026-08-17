@@ -144,20 +144,59 @@ excel_groups = {"5-9": scheme_groups(AGES_59), "11-14": scheme_groups(AGES_1114)
 json.dump(excel_groups, open(BASE + "excel_groups.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=0)
 
-# ========== 4) عدد المباريات والفرق لكل (فئة، مجموعة) — من صفحة «عدد المباريات» ==========
+# ========== 4) عدد المباريات واللاعبين لكل (فئة، مجموعة) — بالاعتماد على رؤوس الأعمدة ==========
+def sheet_headers(sheet_name):
+    """يعيد (الصفوف، خريطة الرأس اسم→فهرس، فهرس صف الرأس) بالاعتماد على أسماء الأعمدة
+    حتى لا تتأثر القراءة عند تغيّر ترتيب الأعمدة في الإكسل."""
+    rws = list(wb[sheet_name].iter_rows(values_only=True))
+    hidx = None
+    for i, rr in enumerate(rws):
+        vals = [str(c).strip() if c else "" for c in rr]
+        if "المجموعة" in vals and "الفئة" in vals:
+            hidx = i
+            break
+    if hidx is None:
+        return rws, {}, 0
+    hmap = {}
+    for j, c in enumerate(rws[hidx]):
+        key = str(c).strip() if c is not None else ""
+        if key and key not in hmap:
+            hmap[key] = j
+    return rws, hmap, hidx
+
+def cell_num(r, idx):
+    return int(r[idx]) if idx is not None and idx < len(r) and isinstance(r[idx], (int, float)) else 0
+
+def cell_str(r, idx):
+    return str(r[idx]).strip() if idx is not None and idx < len(r) and r[idx] else ""
+
 matches_data = {}
 if "عدد المباريات" in wb.sheetnames:
-    wmr = list(wb["عدد المباريات"].iter_rows(values_only=True))
-    for r in wmr[2:]:
-        if not r or len(r) < 7:
+    rws, h, hidx = sheet_headers("عدد المباريات")
+    ca, cg, cn = h.get("الفئة"), h.get("المجموعة"), h.get("عدد الفرق")
+    cm = next((h[k] for k in h if "مباريات" in k), None)
+    for r in rws[hidx + 1:]:
+        if not r:
             continue
-        age = str(r[1]).strip() if r[1] else ""
-        grp = str(r[2]).strip() if r[2] else ""
-        n = r[5] if isinstance(r[5], (int, float)) else 0
-        mv = r[6] if isinstance(r[6], (int, float)) else 0
+        age, grp = cell_str(r, ca), cell_str(r, cg)
         if age and grp:
-            matches_data[age + "|" + grp] = {"n": int(n), "m": int(mv)}
+            matches_data[age + "|" + grp] = {"n": cell_num(r, cn), "m": cell_num(r, cm)}
 json.dump(matches_data, open(BASE + "matches_data.json", "w", encoding="utf-8"),
+          ensure_ascii=False, indent=0)
+
+# ========== 5) عدد اللاعبين لكل (فئة، مجموعة) — من صفحة «عدد اللاعبين» ==========
+players_data = {}
+if "عدد اللاعبين" in wb.sheetnames:
+    rws, h, hidx = sheet_headers("عدد اللاعبين")
+    ca, cg, cn = h.get("الفئة"), h.get("المجموعة"), h.get("عدد الفرق")
+    cp = next((h[k] for k in h if "لاعب" in k), None)
+    for r in rws[hidx + 1:]:
+        if not r:
+            continue
+        age, grp = cell_str(r, ca), cell_str(r, cg)
+        if age and grp:
+            players_data[age + "|" + grp] = {"n": cell_num(r, cn), "p": cell_num(r, cp)}
+json.dump(players_data, open(BASE + "players_data.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=0)
 
 print("تم التحديث من:", XLSX)

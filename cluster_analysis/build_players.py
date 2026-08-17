@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""matches.html: خريطة مخصّصة — لكل فئة: المجموعات المكتملة (≥6) كنقاط عليها اسمها وعدد مبارياتها.
-خيار «جميع الفئات»: كل نقطة تعرض عدد الفرق في كل فئة. + زر جداول (المنطقة←الفئة←المجموعة).
-المباريات = دوري من دور واحد: N×(N−1)/2."""
+"""players.html: نفس خريطة صفحة المباريات لكن المقياس «عدد اللاعبين».
+لكل فئة: المجموعات المكتملة (الفرق ≥ الهدف) كنقاط عليها اسمها وعدد لاعبيها.
+خيار «جميع الفئات»: كل نقطة تعرض عدد اللاعبين في كل فئة.
+عدد اللاعبين مأخوذ من صفحة «عدد اللاعبين» في الإكسل (players_data.json)."""
 import json
 from collections import defaultdict
 
@@ -35,30 +36,25 @@ def centroid(cities):
     return [round(sum(p[0] for p in pts) / len(pts), 5),
             round(sum(p[1] for p in pts) / len(pts), 5)]
 
-# عدد الفرق والمباريات لكل (فئة، مجموعة) — من صفحة «عدد المباريات» في الإكسل مباشرةً
-MDATA_SRC = {}
+# عدد الفرق واللاعبين لكل (فئة، مجموعة) — من صفحة «عدد اللاعبين» في الإكسل مباشرةً
+PDATA_SRC = {}
 try:
-    MDATA_SRC = json.load(open(BASE + "matches_data.json", encoding="utf-8"))
+    PDATA_SRC = json.load(open(BASE + "players_data.json", encoding="utf-8"))
 except Exception:
     pass
 def teams_of(age, g):
-    d = MDATA_SRC.get(age + "|" + g)
+    d = PDATA_SRC.get(age + "|" + g)
     return d["n"] if d else 0
-def matches_src(age, g):
-    d = MDATA_SRC.get(age + "|" + g)
-    return d["m"] if d else 0
+def players_src(age, g):
+    d = PDATA_SRC.get(age + "|" + g)
+    return d["p"] if d else 0
 
-byga = defaultdict(int)
-for r in T["rows"]:
-    byga[(r["age"], r["group"])] += r["count"]
-
-# كل مجموعات كل فئة (من صفحة عدد المباريات) — تظهر إن كانت الفرق ≥6
 groups_by_age = defaultdict(list)
-for key in MDATA_SRC:
+for key in PDATA_SRC:
     a, g = key.split("|", 1)
     groups_by_age[a].append(g)
 
-# لكل فئة: المجموعات المكتملة (الفرق والمباريات من الإكسل)
+# لكل فئة: المجموعات المكتملة (الفرق واللاعبون من الإكسل)
 byAge = {}
 for age in T["ages"]:
     arr = []
@@ -68,33 +64,33 @@ for age in T["ages"]:
             ll = centroid(gc.get(g, []))
             arr.append({"group": g, "region": greg.get(g, ""),
                         "cities": "، ".join(sorted(gc.get(g, []))),
-                        "n": n, "matches": matches_src(age, g),
+                        "n": n, "players": players_src(age, g),
                         "lat": ll[0] if ll else None, "lon": ll[1] if ll else None})
-    arr.sort(key=lambda x: -x["matches"])
+    arr.sort(key=lambda x: -x["players"])
     byAge[age] = arr
 
-# «جميع الفئات»: المجموعات المكتملة في فئة واحدة على الأقل، مع الفرق والمباريات لكل فئة
+# «جميع الفئات»: المجموعات المكتملة في فئة واحدة على الأقل، مع الفرق واللاعبين لكل فئة
 complete_groups = {x["group"] for age in T["ages"] for x in byAge[age]}
 allGroups = []
 for g in complete_groups:
-    teamsByAge = {a: {"n": teams_of(a, g), "m": matches_src(a, g)}
+    teamsByAge = {a: {"n": teams_of(a, g), "p": players_src(a, g)}
                   for a in T["ages"] if teams_of(a, g) >= TARGET}
-    totMatches = sum(v["m"] for v in teamsByAge.values())
+    totPlayers = sum(v["p"] for v in teamsByAge.values())
     totTeams = sum(v["n"] for v in teamsByAge.values())
     ll = centroid(gc.get(g, []))
     allGroups.append({"group": g, "region": greg.get(g, ""),
                       "cities": "، ".join(sorted(gc.get(g, []))),
-                      "teamsByAge": teamsByAge, "totalMatches": totMatches,
+                      "teamsByAge": teamsByAge, "totalPlayers": totPlayers,
                       "totalTeams": totTeams,
                       "lat": ll[0] if ll else None, "lon": ll[1] if ll else None})
-allGroups.sort(key=lambda x: -x["totalMatches"])
+allGroups.sort(key=lambda x: -x["totalPlayers"])
 
 MDATA = {"ages": T["ages"], "byAge": byAge, "allGroups": allGroups, "target": TARGET}
 
 HTML = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الخريطة وعدد المباريات لكل مجموعة</title>
+<title>الخريطة وعدد اللاعبين لكل مجموعة</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -120,14 +116,6 @@ HTML = r"""<!DOCTYPE html>
  .kpi .l{font-size:12.5px;color:#8fdcb4;margin-top:4px}
  .card{background:#0b3524;border:1px solid #12563a;border-radius:12px;padding:16px}
  .card h3{margin:0 0 12px;font-size:15px;color:#ffd166}
- .bar{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
- .bar .lab{flex:1;min-width:0;white-space:normal}
- .bar .lab .sub{font-size:10px;color:#7fbfa0;margin-top:2px;font-weight:400}
- .bar .track{flex:1;background:#04150e;border-radius:6px;height:22px;overflow:hidden}
- .bar .fill{height:100%;background:linear-gradient(90deg,#159a80,#2fe6b8);border-radius:6px;min-width:3px}
- .bar.clk{cursor:pointer;border-radius:8px;padding:4px 6px;margin:1px -6px 8px} .bar.clk:hover{background:#0d4b32}
- .bar .val{width:70px;text-align:center;font-weight:800;color:#ffd166}
- .bar .teams{width:70px;text-align:center;color:#8fdcb4;font-size:12px}
  .muted{color:#8fdcb4;font-size:12px}
  .row{padding:9px 10px;border-bottom:1px solid #0d3a26;font-size:14px}
  .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
@@ -136,11 +124,6 @@ HTML = r"""<!DOCTYPE html>
  .rhd{color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding:10px 2px 6px;margin-top:10px}
  .rhd:first-child{border-top:0;margin-top:0}
  .rhd .rhdt{color:#8fdcb4;font-size:12px;font-weight:700}
- .trow{padding:7px 10px;border-bottom:1px solid #0d3a26;font-size:13.5px}
- .trow b{font-size:14px} .trow .tot{color:#ffd166;font-weight:800;margin-right:6px}
- .trow .sub{font-size:10.5px;color:#7fbfa0;margin-top:2px;font-weight:400}
- .hd{display:flex;gap:10px;color:#8fdcb4;font-size:11px;font-weight:700;padding:0 0 4px;border-bottom:1px solid #12563a;margin-bottom:8px}
- .hd .a{flex:1}.hd .c{width:70px;text-align:center}.hd .d{width:70px;text-align:center}
  .gtip{background:#04150e;border:1px solid #2fe6b8;color:#eafff3;border-radius:8px;font-family:'Tajawal';
    font-size:12px;font-weight:700;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.5);padding:5px 9px;line-height:1.5}
  .gtip b{color:#ffd166;font-size:13px}
@@ -155,10 +138,10 @@ HTML = r"""<!DOCTYPE html>
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
- <h1>الخريطة وعدد المباريات لكل مجموعة</h1>
+ <h1>الخريطة وعدد اللاعبين لكل مجموعة</h1>
  <nav class="nav">
-   <a class="navlink on" href="matches.html">عدد المباريات</a>
-   <a class="navlink" href="players.html">عدد اللاعبين</a>
+   <a class="navlink" href="matches.html">عدد المباريات</a>
+   <a class="navlink on" href="players.html">عدد اللاعبين</a>
  </nav>
 </div>
 <div class="wrap">
@@ -166,7 +149,6 @@ HTML = r"""<!DOCTYPE html>
  <div id="map"></div>
  <div class="kpis" id="kpis"></div>
  <div class="card"><h3 id="ttl"></h3>
-   
    <div id="list"></div>
  </div>
 </div>
@@ -178,9 +160,8 @@ let cur=ALL;
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
-function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
+function nPlayer(n){return arCount(n,'لاعب واحد','لاعبان','لاعبين','لاعبًا');}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
-function shortAge(a){return a.replace('تحت ','ت');}
 let map=null, layer=null;
 try{
   map=L.map('map',{attributionControl:false,zoomControl:true}).setView([24.2,45.5],5.4);
@@ -199,26 +180,26 @@ function marker(x,radius,name,numbers){
 function drawMap(){
   if(!map||!layer)return; layer.clearLayers();
   if(cur===ALL){
-    const mx=Math.max(1,...MD.allGroups.map(x=>x.totalMatches));
+    const mx=Math.max(1,...MD.allGroups.map(x=>x.totalPlayers));
     MD.allGroups.forEach(x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a])
-        .map(a=>{const d=x.teamsByAge[a];return '<div class="ag">'+a+': '+nTeam(d.n)+' — '+nMatch(d.m)+'</div>';}).join('');
-      const nums=(ages||'<div class="z">لا فرق</div>')+'<div style="color:#ffd166;margin-top:4px">إجمالي المباريات: '+nMatch(x.totalMatches)+'</div>';
-      marker(x,7+11*(x.totalMatches/mx),x.group.replace('مجموعة ',''),nums);
+        .map(a=>{const d=x.teamsByAge[a];return '<div class="ag">'+a+': '+nPlayer(d.p)+'</div>';}).join('');
+      const nums=(ages||'<div class="z">لا لاعبين</div>')+'<div style="color:#ffd166;margin-top:4px">إجمالي اللاعبين: '+nPlayer(x.totalPlayers)+'</div>';
+      marker(x,7+11*(x.totalPlayers/mx),x.group.replace('مجموعة ',''),nums);
     });
   } else {
-    const arr=MD.byAge[cur]||[]; const mx=Math.max(1,...arr.map(x=>x.matches));
-    arr.forEach(x=>marker(x,7+10*(x.matches/mx),x.group.replace('مجموعة ',''),
-      nTeam(x.n)+' — '+nMatch(x.matches)));
+    const arr=MD.byAge[cur]||[]; const mx=Math.max(1,...arr.map(x=>x.players));
+    arr.forEach(x=>marker(x,7+10*(x.players/mx),x.group.replace('مجموعة ',''),
+      nPlayer(x.players)+' في '+nTeam(x.n)));
   }
 }
-function regionSections(items,matchesOf,teamsOf,rowFn){
+function regionSections(items,playersOf,teamsOf,rowFn){
   const R={},order=[];
   items.forEach(x=>{const r=x.region||'غير محدد';if(!R[r]){R[r]=[];order.push(r);}R[r].push(x);});
-  order.sort((a,b)=>R[b].reduce((s,x)=>s+matchesOf(x),0)-R[a].reduce((s,x)=>s+matchesOf(x),0));
+  order.sort((a,b)=>R[b].reduce((s,x)=>s+playersOf(x),0)-R[a].reduce((s,x)=>s+playersOf(x),0));
   return order.map(r=>{
-    const tm=R[r].reduce((s,x)=>s+matchesOf(x),0), tt=R[r].reduce((s,x)=>s+teamsOf(x),0);
-    return '<div class="rhd">'+r+' <span class="rhdt">'+nTeam(tt)+' · '+nMatch(tm)+'</span></div>'+R[r].map(rowFn).join('');
+    const tp=R[r].reduce((s,x)=>s+playersOf(x),0), tt=R[r].reduce((s,x)=>s+teamsOf(x),0);
+    return '<div class="rhd">'+r+' <span class="rhdt">'+nTeam(tt)+' · '+nPlayer(tp)+'</span></div>'+R[r].map(rowFn).join('');
   }).join('');
 }
 function render(){
@@ -226,20 +207,20 @@ function render(){
   document.querySelectorAll('#ageT .tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
   const K=document.getElementById('kpis'), L2=document.getElementById('list');
   if(cur===ALL){
-    const g=MD.allGroups, totM=g.reduce((s,x)=>s+x.totalMatches,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
+    const g=MD.allGroups, totP=g.reduce((s,x)=>s+x.totalPlayers,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
     K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
-      '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
+      '<div class="kpi"><div class="n">'+totP+'</div><div class="l">مجموع اللاعبين</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
-    L2.innerHTML=regionSections(g,x=>x.totalMatches,x=>x.totalTeams,x=>{
-      const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nTeam(d.n)+' — '+nMatch(d.m);}).join('<br>');
-      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';});
+    L2.innerHTML=regionSections(g,x=>x.totalPlayers,x=>x.totalTeams,x=>{
+      const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nPlayer(d.p)+' في '+nTeam(d.n);}).join('<br>');
+      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nPlayer(x.totalPlayers)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';});
   } else {
-    const arr=MD.byAge[cur]||[], totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
+    const arr=MD.byAge[cur]||[], totP=arr.reduce((s,x)=>s+x.players,0), totT=arr.reduce((s,x)=>s+x.n,0);
     K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
-      '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
+      '<div class="kpi"><div class="n">'+totP+'</div><div class="l">مجموع اللاعبين</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
-    L2.innerHTML=arr.length?regionSections(arr,x=>x.matches,x=>x.n,x=>
-      '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nMatch(x.matches)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>'):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
+    L2.innerHTML=arr.length?regionSections(arr,x=>x.players,x=>x.n,x=>
+      '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nPlayer(x.players)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>'):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
   }
   document.querySelectorAll('#list .row.clk').forEach(b=>b.onclick=()=>{
     const la=parseFloat(b.dataset.lat), lo=parseFloat(b.dataset.lon);
@@ -253,5 +234,5 @@ setTimeout(()=>{try{map&&map.invalidateSize();}catch(e){}},300);
 </body></html>"""
 
 HTML = HTML.replace("__MDATA__", json.dumps(MDATA, ensure_ascii=False))
-open(BASE + "matches.html", "w", encoding="utf-8").write(HTML)
-print("saved matches.html", len(HTML), "bytes | مجموعات مكتملة (كل الفئات):", len(allGroups))
+open(BASE + "players.html", "w", encoding="utf-8").write(HTML)
+print("saved players.html", len(HTML), "bytes | مجموعات مكتملة (كل الفئات):", len(allGroups))
