@@ -83,11 +83,7 @@ HTML = r"""<!DOCTYPE html>
  <div class="mapwrap"><iframe src="./" title="الخريطة"></iframe></div>
  <div class="tabs" id="ageT"></div>
  <div class="kpis" id="kpis"></div>
- <div class="card"><h3 id="ttl"></h3>
-   <div class="hd"><div class="a">المجموعة</div><div class="b"></div><div class="c">الفِرَق</div><div class="d">المباريات</div></div>
-   <div id="list"></div>
- </div>
- <div class="muted" style="margin-top:12px">المباريات محسوبة بنظام الدوري من دور واحد: عدد المباريات = ن×(ن−1)÷2 لكل مجموعة. تظهر المجموعات المكتملة فقط (٦ فرق فأكثر).</div>
+ <div class="muted" style="margin-top:6px">المباريات بنظام الدوري من دور واحد (ن×(ن−1)÷2)، للمجموعات المكتملة فقط (٦ فرق فأكثر).</div>
 </div>
 <script>
 const MD=__MDATA__;
@@ -96,19 +92,10 @@ function render(){
   document.getElementById('ageT').innerHTML=MD.ages.map(a=>'<button class="tab'+(a===cur?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
   const arr=MD.byAge[cur]||[];
-  const totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
+  const totM=arr.reduce((s,x)=>s+x.matches,0);
   document.getElementById('kpis').innerHTML=
-    '<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">مجموعات مكتملة</div></div>'+
-    '<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
-    '<div class="kpi"><div class="n">'+totM+'</div><div class="l">مجموع المباريات</div></div>';
-  document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
-  const mx=Math.max(1,...arr.map(x=>x.matches));
-  document.getElementById('list').innerHTML=arr.length?arr.map(x=>
-    '<div class="bar"><div class="lab"><b>'+x.group+'</b>'+(x.region?' <span class="muted">'+x.region+'</span>':'')+
-      (x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div>'+
-    '<div class="track"><div class="fill" style="width:'+(x.matches/mx*100)+'%"></div></div>'+
-    '<div class="teams">'+x.n+' فرق</div>'+
-    '<div class="val">'+x.matches+'</div></div>').join(''):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
+    '<div class="kpi" style="flex:2"><div class="n" style="font-size:40px">'+totM+'</div><div class="l">عدد المباريات — '+cur+'</div></div>'+
+    '<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">مجموعات مكتملة</div></div>';
 }
 render();
 </script>
