@@ -57,8 +57,9 @@ for age in T["ages"]:
 complete_groups = {x["group"] for age in T["ages"] for x in byAge[age]}
 allGroups = []
 for g in complete_groups:
-    teamsByAge = {a: byga.get((a, g), 0) for a in T["ages"]}
-    totMatches = sum(n * (n - 1) // 2 for n in teamsByAge.values() if n >= TARGET)
+    # الفئات المكتملة فقط (≥6) — لتتّسق الفرق والمباريات
+    teamsByAge = {a: byga.get((a, g), 0) for a in T["ages"] if byga.get((a, g), 0) >= TARGET}
+    totMatches = sum(n * (n - 1) // 2 for n in teamsByAge.values())
     ll = centroid(gc.get(g, []))
     allGroups.append({"group": g, "region": greg.get(g, ""),
                       "cities": "، ".join(sorted(gc.get(g, []))),
@@ -216,18 +217,19 @@ function buildTables(){
     (R[x.region]=R[x.region]||{});(R[x.region][age]=R[x.region][age]||[]).push(x);});});
   const regions=Object.keys(R).sort();let html='';let grand=0;
   regions.forEach(rg=>{
-    let regTot=0;let sec='<div style="margin-top:16px"><div style="color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding-top:10px">'+rg+'</div>';
+    let regTot=0; MD.ages.forEach(age=>{(R[rg][age]||[]).forEach(x=>regTot+=x.matches);}); grand+=regTot;
+    let sec='<div style="margin-top:16px"><div style="color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding-top:10px">'+rg+' <span style="color:#8fdcb4;font-size:12.5px;font-weight:700">— '+nMatch(regTot)+'</span></div>';
     MD.ages.forEach(age=>{const gs=R[rg][age];if(!gs||!gs.length)return;
-      const at=gs.reduce((s,x)=>s+x.matches,0);regTot+=at;
+      const at=gs.reduce((s,x)=>s+x.matches,0);
       sec+='<div style="margin:8px 0 3px;color:#8fdcb4;font-weight:700">'+age+' <span style="color:#7fbfa0;font-size:11px">('+nMatch(at)+')</span></div>';
       sec+='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px">';
       gs.slice().sort((a,b)=>b.matches-a.matches).forEach(x=>{
-        sec+='<tr><td style="padding:4px 8px;border-bottom:1px solid #0d3a26">'+x.group+'</td>'+
+        sec+='<tr><td style="padding:4px 8px;border-bottom:1px solid #0d3a26"><b>'+x.group+'</b>'+(x.cities?'<div style="color:#7fbfa0;font-size:10px;font-weight:400">('+x.cities+')</div>':'')+'</td>'+
              '<td style="padding:4px 8px;border-bottom:1px solid #0d3a26;color:#8fdcb4;width:80px;text-align:center">'+nTeam(x.n)+'</td>'+
              '<td style="padding:4px 8px;border-bottom:1px solid #0d3a26;color:#ffd166;font-weight:700;width:100px;text-align:center">'+nMatch(x.matches)+'</td></tr>';});
       sec+='</table>';});
-    sec+='<div style="color:#ffd166;font-weight:800;margin:4px 0 6px">إجمالي مباريات '+rg+': '+nMatch(regTot)+'</div></div>';
-    grand+=regTot;html+=sec;});
+    sec+='</div>';
+    html+=sec;});
   return '<div style="color:#eafff3;font-weight:800;margin-bottom:6px">إجمالي المباريات الكلي: '+nMatch(grand)+'</div>'+html;
 }
 document.getElementById('tblBtn').onclick=function(){
