@@ -185,9 +185,10 @@ const MD=__MDATA__;
 const ALL='جميع الفئات';
 const AGES=[ALL].concat(MD.ages);
 let cur=ALL;
+function gp(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
-  if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
+  if(m>=3&&m<=10)return gp(n)+' '+few; return gp(n)+' '+many;}
 function nPlayer(n){return arCount(n,'لاعب واحد','لاعبان','لاعبين','لاعبًا');}
 function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
@@ -247,16 +248,16 @@ function render(){
   else CC.style.display='none';
   if(cur===ALL){
     const g=MD.allGroups, totP=g.reduce((s,x)=>s+x.totalPlayers,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
-    K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
-      '<div class="kpi"><div class="n">'+totP+'</div><div class="l">مجموع اللاعبين</div></div>';
+    K.innerHTML='<div class="kpi"><div class="n">'+gp(totT)+'</div><div class="l">مجموع الفِرَق</div></div>'+
+      '<div class="kpi"><div class="n">'+gp(totP)+'</div><div class="l">مجموع اللاعبين</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
     L2.innerHTML=regionSections(g,x=>x.totalPlayers,x=>x.totalTeams,x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nPlayer(d.p)+' في '+nTeam(d.n);}).join('<br>');
       return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nPlayer(x.totalPlayers)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';});
   } else {
     const arr=MD.byAge[cur]||[], totP=arr.reduce((s,x)=>s+x.players,0), totT=arr.reduce((s,x)=>s+x.n,0);
-    K.innerHTML='<div class="kpi"><div class="n">'+totT+'</div><div class="l">مجموع الفِرَق</div></div>'+
-      '<div class="kpi"><div class="n">'+totP+'</div><div class="l">مجموع اللاعبين</div></div>';
+    K.innerHTML='<div class="kpi"><div class="n">'+gp(totT)+'</div><div class="l">مجموع الفِرَق</div></div>'+
+      '<div class="kpi"><div class="n">'+gp(totP)+'</div><div class="l">مجموع اللاعبين</div></div>';
     document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
     L2.innerHTML=arr.length?regionSections(arr,x=>x.players,x=>x.n,x=>
       '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nPlayer(x.players)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>'):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
