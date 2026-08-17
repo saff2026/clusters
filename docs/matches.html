@@ -39,6 +39,12 @@
  .gtip b{color:#ffd166;font-size:13px}
  .gtip .ag{color:#8ff0b0;font-size:11px} .gtip .z{color:#6f9a86}
  .gtip:before{display:none}
+ .leaflet-popup-content-wrapper{background:#04150e;color:#eafff3;border:1px solid #2fe6b8;border-radius:10px}
+ .leaflet-popup-content{margin:9px 13px;font-family:'Tajawal';font-size:13px;font-weight:700;line-height:1.7;direction:rtl;text-align:right}
+ .leaflet-popup-content b{color:#ffd166;font-size:14px}
+ .leaflet-popup-content .ag{color:#8ff0b0;font-size:12px}
+ .leaflet-popup-tip{background:#04150e;border-right:1px solid #2fe6b8;border-bottom:1px solid #2fe6b8}
+ .leaflet-popup-close-button{color:#8fdcb4 !important}
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
@@ -73,11 +79,13 @@ try{
   layer=L.layerGroup().addTo(map);
 }catch(e){ var _m=document.getElementById('map'); if(_m)_m.style.display='none'; }
 function zoomTo(lat,lon){ if(map&&lat!=null){ map.flyTo([lat,lon],9,{duration:.6}); document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'}); } }
-function marker(x,radius,html){
+function marker(x,radius,name,numbers){
   if(x.lat==null||!layer)return;
-  L.circleMarker([x.lat,x.lon],{radius:radius,color:'#04150e',weight:1.5,fillColor:'#2fe6b8',fillOpacity:.9})
-   .bindTooltip(html,{permanent:true,direction:'center',className:'gtip'})
-   .on('click',function(){zoomTo(x.lat,x.lon);}).addTo(layer);
+  const cm=L.circleMarker([x.lat,x.lon],{radius:radius,color:'#04150e',weight:1.5,fillColor:'#2fe6b8',fillOpacity:.9})
+   .bindTooltip(name,{permanent:true,direction:'center',className:'gtip'})
+   .bindPopup('<b>'+name+'</b><br>'+numbers,{className:'gpop',maxWidth:260})
+   .on('click',function(){zoomTo(x.lat,x.lon);});
+  cm.addTo(layer);
 }
 function drawMap(){
   if(!map||!layer)return; layer.clearLayers();
@@ -86,16 +94,18 @@ function drawMap(){
     MD.allGroups.forEach(x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a]>0)
         .map(a=>'<div class="ag">'+a+': '+nTeam(x.teamsByAge[a])+'</div>').join('');
-      marker(x,7+11*(x.totalMatches/mx),'<b>'+x.group.replace('مجموعة ','')+'</b>'+(ages||'<div class="z">لا فرق</div>'));
+      const nums=(ages||'<div class="z">لا فرق</div>')+'<div style="color:#ffd166;margin-top:4px">إجمالي المباريات: '+x.totalMatches+'</div>';
+      marker(x,7+11*(x.totalMatches/mx),x.group.replace('مجموعة ',''),nums);
     });
   } else {
     const arr=MD.byAge[cur]||[]; const mx=Math.max(1,...arr.map(x=>x.matches));
-    arr.forEach(x=>marker(x,7+10*(x.matches/mx),'<b>'+x.group.replace('مجموعة ','')+'</b><br>'+nMatch(x.matches)));
+    arr.forEach(x=>marker(x,7+10*(x.matches/mx),x.group.replace('مجموعة ',''),
+      nTeam(x.n)+' — '+nMatch(x.matches)));
   }
 }
 function render(){
   document.getElementById('ageT').innerHTML=AGES.map(a=>'<button class="tab'+(a===cur?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
-  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
+  document.querySelectorAll('#ageT .tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
   const K=document.getElementById('kpis'), L2=document.getElementById('list');
   if(cur===ALL){
     const g=MD.allGroups, totM=g.reduce((s,x)=>s+x.totalMatches,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
