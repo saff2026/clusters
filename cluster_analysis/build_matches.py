@@ -161,7 +161,6 @@ HTML = r"""<!DOCTYPE html>
    
    <div id="list"></div>
  </div>
- <div class="card" id="tablesCard" style="margin-top:14px"><h3>جداول المباريات حسب المنطقة ثم الفئة ثم المجموعة (المكتملة فقط)</h3><div id="tables"></div></div>
 </div>
 <script>
 const MD=__MDATA__;
@@ -240,26 +239,7 @@ function render(){
   });
   drawMap();
 }
-function buildTables(){
-  const R={};
-  MD.ages.forEach(age=>{(MD.byAge[age]||[]).forEach(x=>{
-    (R[x.region]=R[x.region]||{});(R[x.region][age]=R[x.region][age]||[]).push(x);});});
-  const regions=Object.keys(R).sort();let html='';let grand=0;
-  regions.forEach(rg=>{
-    let regTot=0; MD.ages.forEach(age=>{(R[rg][age]||[]).forEach(x=>regTot+=x.matches);}); grand+=regTot;
-    let sec='<div style="margin-top:16px"><div style="color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding-top:10px">'+rg+' <span style="color:#8fdcb4;font-size:12.5px;font-weight:700">— '+nMatch(regTot)+'</span></div>';
-    MD.ages.forEach(age=>{const gs=R[rg][age];if(!gs||!gs.length)return;
-      const at=gs.reduce((s,x)=>s+x.matches,0);
-      sec+='<div style="margin:8px 0 3px;color:#8fdcb4;font-weight:700">'+age+' <span style="color:#7fbfa0;font-size:11px">('+nMatch(at)+')</span></div>';
-      gs.slice().sort((a,b)=>b.matches-a.matches).forEach(x=>{
-        sec+='<div class="trow"><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nMatch(x.matches)+'</span>'+
-             (x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div>';});});
-    sec+='</div>';
-    html+=sec;});
-  return '<div style="color:#eafff3;font-weight:800;margin-bottom:6px">إجمالي المباريات الكلي: '+nMatch(grand)+'</div>'+html;
-}
 render();
-document.getElementById('tables').innerHTML=buildTables();
 setTimeout(()=>{try{map&&map.invalidateSize();}catch(e){}},300);
 </script>
 </body></html>"""
