@@ -151,6 +151,7 @@ HTML = r"""<!DOCTYPE html>
  .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
  .row b{font-size:15px} .row .tot{color:#ffd166;font-weight:800}
  .row .sub{font-size:11.5px;color:#8ff0b0;margin-top:4px;line-height:1.9;font-weight:500}
+ .row .cnames{font-size:11px;color:#7fbfa0;margin-top:3px;font-weight:400;line-height:1.7}
  .rhd{color:#ffd166;font-weight:800;font-size:15px;border-top:1px solid #12563a;padding:10px 2px 6px;margin-top:10px}
  .rhd:first-child{border-top:0;margin-top:0}
  .rhd .rhdt{color:#8fdcb4;font-size:12px;font-weight:700}
@@ -271,7 +272,7 @@ function render(){
     document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
     L2.innerHTML=regionSections(g,x=>x.totalMatches,x=>x.totalTeams,x=>{
       const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nTeam(d.n)+' — '+nMatch(d.m);}).join('<br>');
-      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+'<div class="sub">'+ages+'</div></div></div>';});
+      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nMatch(x.totalMatches)+'</span>'+(x.cities?'<div class="cnames">'+x.cities+'</div>':'')+'<div class="sub">'+ages+'</div></div></div>';});
   } else {
     const arr=MD.byAge[cur]||[], totM=arr.reduce((s,x)=>s+x.matches,0), totT=arr.reduce((s,x)=>s+x.n,0);
     K.innerHTML='<div class="kpi"><div class="n">'+gp(totT)+'</div><div class="l">مجموع الفِرَق</div></div>'+
