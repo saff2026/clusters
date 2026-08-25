@@ -132,6 +132,8 @@ function groupChart(el){
   }
   arr.sort((a,b)=>b.count-a.count);
   const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
+  const grpDone=arr.filter(a=>a.count>=TARGET).length;
+  const gh=document.getElementById('grph'); if(gh)gh.innerHTML+=' <span style="color:#7ee0a0;font-size:12px;font-weight:700">('+grpDone+'/'+arr.length+' مكتملة)</span>';
   el.innerHTML=arr.length?arr.map(a=>{
     const ok=a.count>=TARGET;
     const col=ok?'linear-gradient(90deg,#1a9850,#2ecc71)':'linear-gradient(90deg,#c0392b,#e74c3c)';
@@ -159,8 +161,8 @@ function regionPanel(el){
     Object.keys(cnt).forEach(g=>{if(!struct[g]&&cnt[g]>0)arr.push({group:g,count:cnt[g],cities:''});});
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
-    const tot=arr.reduce((s,a)=>s+a.count,0),mx=Math.max(TARGET,1,...arr.map(a=>a.count));
-    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #12563a;padding-top:10px">'+age+'</div>';
+    const tot=arr.reduce((s,a)=>s+a.count,0),mx=Math.max(TARGET,1,...arr.map(a=>a.count)),doneN=arr.filter(a=>a.count>=TARGET).length;
+    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #12563a;padding-top:10px">'+age+' <span style="color:#9fb6d0;font-size:11px;font-weight:400">('+doneN+'/'+arr.length+' مكتملة)</span></div>';
     html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
       return '<div class="bar"><div class="lab" style="width:210px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
         ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span>'+
@@ -217,8 +219,8 @@ function officePanel(el){
     }
     if(!arr.length)return;
     arr.sort((a,b)=>b.count-a.count);
-    const mx=Math.max(TARGET,1,...arr.map(a=>a.count));
-    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #12563a;padding-top:10px">'+age+'</div>';
+    const mx=Math.max(TARGET,1,...arr.map(a=>a.count)),doneN=arr.filter(a=>a.count>=TARGET).length;
+    html+='<div style="margin-top:14px"><div style="color:#ffd166;font-weight:700;margin-bottom:6px;font-size:14px;border-top:1px solid #12563a;padding-top:10px">'+age+' <span style="color:#9fb6d0;font-size:11px;font-weight:400">('+doneN+'/'+arr.length+' مكتملة)</span></div>';
     html+=arr.map(a=>{const ok=a.count>=TARGET,col=ok?'#1a9850':'#c0392b';
       return '<div class="bar"><div class="lab" style="width:230px;white-space:normal" title="'+a.cities+'"><b>'+a.group+'</b>'+
         ' <span style="color:'+(ok?'#7ee0a0':'#ff9a9a')+';font-size:10px">'+(ok?'مكتمل':'باقٍ '+(TARGET-a.count))+'</span>'+
