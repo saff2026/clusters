@@ -64,6 +64,7 @@ HTML = r"""<!DOCTYPE html>
  <span class="sp"></span>
  <label class="btn g" style="cursor:pointer">⬆️ تحديث من إكسل<input type="file" id="file" accept=".xlsx,.xls" style="display:none"></label>
  <a class="btn" href="split.html">🧩 تقسيم الفرق على المجموعات</a>
+ <a class="btn" href="offices.html">🏛️ مكاتب الوزارة</a>
  <a class="btn" href="./">🗺️ الخريطة</a>
 </div>
 <div class="wrap">

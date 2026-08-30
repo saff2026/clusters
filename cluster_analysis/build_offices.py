@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""يبني صفحة «تقسيم الفرق على المجموعات» (split.html) بنمط لوحة بيانات الفرق:
-لكل فئة: المجموعات مقسّمة حسب المنطقة، ولكل مجموعة مدنها وعدد الفرق في كل مدينة،
-مع حالة الاكتمال (المطلوب لكل مجموعة). المصدر: split_data.json من «عدد الفرق لكل مدينة»."""
+"""يبني صفحة «مكاتب الوزارة» (offices.html) بنمط لوحة بيانات الفرق:
+لكل مكتب: مجموعاته (من ربط المجموعة→المكتب في «المدخلات»)، وعدد فرقها،
+مقسّمة على المدن (لفئة محددة) أو على الفئات (في «جميع الفئات»)، مع حالة الاكتمال.
+المصدر: split_data.json + ربط GROFF من _maps.json."""
 import json
 
 BASE = "/home/user/khitba/cluster_analysis/"
 S = json.load(open(BASE + "split_data.json", encoding="utf-8"))
+M = json.load(open(BASE + "_maps.json", encoding="utf-8"))
+GROFF = M.get("GROFF", {})
+
+# إضافة المكتب لكل مجموعة (من ربط المجموعة→المكتب)
+for age in S["byAge"]:
+    for g in S["byAge"][age]:
+        g["office"] = GROFF.get(g["group"], "غير محدد")
+S["offices"] = sorted({g["office"] for age in S["byAge"] for g in S["byAge"][age]})
 
 HTML = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>تقسيم الفرق على المجموعات</title>
+<title>مكاتب الوزارة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
  *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#0b1c30;color:#e9eef5}
@@ -37,6 +46,7 @@ HTML = r"""<!DOCTYPE html>
  .kpi .l{font-size:12.5px;color:#9fb6d0;margin-top:4px}
  .rhd{color:#ffd166;font-weight:800;font-size:16px;border-top:2px solid #1c3a5e;padding:14px 2px 4px;margin-top:12px}
  .rhd:first-of-type{border-top:0;margin-top:0}
+ .rhd .rg{color:#8fb3cf;font-size:12.5px;font-weight:700}
  .rhd .rt{color:#9fb6d0;font-size:12.5px;font-weight:700}
  .gcard{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:13px 15px;margin:10px 0}
  .gcard.done{border-color:#2e7d5b}
@@ -54,15 +64,15 @@ HTML = r"""<!DOCTYPE html>
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()">
- <h1>🧩 تقسيم الفرق على المجموعات</h1>
+ <h1>🏛️ مكاتب الوزارة</h1>
  <span class="sp"></span>
- <a class="btn" href="offices.html">🏛️ مكاتب الوزارة</a>
+ <a class="btn" href="split.html">🧩 تقسيم الفرق</a>
  <a class="btn" href="dashboard.html">📊 بيانات الفرق</a>
  <a class="btn" href="./">🗺️ الخريطة</a>
 </div>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
- <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
+ <div class="flt"><div class="lab">المكتب:</div><select class="rgn" id="rgn"></select></div>
  <div class="flt"><div class="lab">حالة الاكتمال:</div><div class="tabs" id="statT"></div></div>
  <div class="kpis" id="kpis"></div>
  <div id="content"></div>
@@ -71,7 +81,7 @@ HTML = r"""<!DOCTYPE html>
 const S=__SPLIT__;
 const TARGET=S.target||6;
 const ALL='جميع الفئات';
-let curAge=ALL, curRegion='الكل', curStatus='الكل';
+let curAge=ALL, curOffice='الكل', curStatus='الكل';
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
@@ -86,11 +96,10 @@ function ageTabs(){
   el.innerHTML=AGES.map(a=>'<button class="tab'+(a===curAge?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curAge=b.dataset.a;render();});
 }
-// «جميع الفئات»: تجميع كل مجموعة عبر الفئات (المدن بالجمع، والاكتمال = مكتملة في كل فئاتها)
 function allAgesData(){
   const map={};
   S.ages.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
-    const d=map[g.group]||(map[g.group]={region:g.region,cities:{},ages:{}});
+    const d=map[g.group]||(map[g.group]={region:g.region,office:g.office,cities:{},ages:{}});
     g.cities.forEach(c=>{d.cities[c.city]=(d.cities[c.city]||0)+c.n;});
     d.ages[age]=(d.ages[age]||0)+g.total;});});
   return Object.keys(map).map(grp=>{
@@ -98,18 +107,18 @@ function allAgesData(){
     const ageList=S.ages.filter(a=>a in d.ages);
     const doneAges=ageList.filter(a=>d.ages[a]>=TARGET).length;
     const cities=Object.entries(d.cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
-    return {group:grp,region:d.region,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,ages:d.ages,
+    return {group:grp,region:d.region,office:d.office,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,ages:d.ages,
             agesN:ageList.length,doneAges:doneAges,allDone:ageList.length>0&&doneAges===ageList.length};
   }).sort((a,b)=>b.total-a.total);
 }
 function curData(){ return curAge===ALL?allAgesData():(S.byAge[curAge]||[]).slice(); }
-function regionOptions(){
+function officeOptions(){
   const arr=curData();
-  const regs=[...new Set(arr.map(g=>g.region))].sort();
+  const offs=[...new Set(arr.map(g=>g.office))].sort();
   const sel=document.getElementById('rgn');
-  if(!regs.includes(curRegion))curRegion='الكل';
-  sel.innerHTML='<option value="الكل">كل المناطق</option>'+regs.map(r=>'<option'+(r===curRegion?' selected':'')+'>'+r+'</option>').join('');
-  sel.onchange=()=>{curRegion=sel.value;render();};
+  if(!offs.includes(curOffice))curOffice='الكل';
+  sel.innerHTML='<option value="الكل">كل المكاتب</option>'+offs.map(o=>'<option'+(o===curOffice?' selected':'')+'>'+o+'</option>').join('');
+  sel.onchange=()=>{curOffice=sel.value;render();};
 }
 function statusTabs(){
   const opts=['الكل','المكتملة','غير المكتملة'];
@@ -117,30 +126,34 @@ function statusTabs(){
   el.innerHTML=opts.map(o=>'<button class="tab'+(o===curStatus?' on':'')+'" data-s="'+o+'">'+o+'</button>').join('');
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curStatus=b.dataset.s;render();});
 }
+function officeRegion(gs){ // المنطقة الغالبة لمجموعات المكتب
+  const c={}; gs.forEach(g=>{c[g.region]=(c[g.region]||0)+1;});
+  return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];
+}
 function render(){
-  ageTabs(); regionOptions(); statusTabs();
+  ageTabs(); officeOptions(); statusTabs();
   const isAll=curAge===ALL;
   const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
   let arr=curData();
-  if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);
+  if(curOffice!=='الكل')arr=arr.filter(g=>g.office===curOffice);
   if(curStatus==='المكتملة')arr=arr.filter(isDone);
   else if(curStatus==='غير المكتملة')arr=arr.filter(g=>!isDone(g));
   const done=arr.filter(isDone).length;
   const totTeams=arr.reduce((s,g)=>s+g.total,0);
-  const cities=new Set(); arr.forEach(g=>g.cities.forEach(c=>cities.add(c.city)));
+  const offs=new Set(arr.map(g=>g.office));
   document.getElementById('kpis').innerHTML=
+    '<div class="kpi"><div class="n">'+offs.size+'</div><div class="l">عدد المكاتب</div></div>'+
     '<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">عدد المجموعات</div></div>'+
     '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done+'</div><div class="l">'+(isAll?'مكتملة في كل الفئات':'مجموعات مكتملة')+'</div></div>'+
-    '<div class="kpi"><div class="n">'+totTeams+'</div><div class="l">مجموع الفِرَق</div></div>'+
-    '<div class="kpi"><div class="n">'+cities.size+'</div><div class="l">عدد المدن</div></div>';
-  // تجميع حسب المنطقة
+    '<div class="kpi"><div class="n">'+totTeams+'</div><div class="l">مجموع الفِرَق</div></div>';
+  // تجميع حسب المكتب
   const R={},order=[];
-  arr.forEach(g=>{if(!R[g.region]){R[g.region]=[];order.push(g.region);}R[g.region].push(g);});
+  arr.forEach(g=>{if(!R[g.office]){R[g.office]=[];order.push(g.office);}R[g.office].push(g);});
   order.sort((a,b)=>R[b].reduce((s,g)=>s+g.total,0)-R[a].reduce((s,g)=>s+g.total,0));
   let html='';
-  order.forEach(rg=>{
-    const gs=R[rg]; const rt=gs.reduce((s,g)=>s+g.total,0), rd=gs.filter(isDone).length;
-    html+='<div class="rhd">'+rg+' <span class="rt">— '+nTeam(rt)+' · '+nGroup(gs.length)+' ('+rd+'/'+gs.length+' مكتملة)</span></div>';
+  order.forEach(off=>{
+    const gs=R[off]; const rt=gs.reduce((s,g)=>s+g.total,0), rd=gs.filter(isDone).length;
+    html+='<div class="rhd">مكتب '+off+' <span class="rg">('+officeRegion(gs)+')</span> <span class="rt">— '+nTeam(rt)+' · '+nGroup(gs.length)+' ('+rd+'/'+gs.length+' مكتملة)</span></div>';
     gs.forEach(g=>{
       const ok=isDone(g);
       const stTxt=isAll
@@ -173,5 +186,5 @@ render();
 </body></html>"""
 
 HTML = HTML.replace("__SPLIT__", json.dumps(S, ensure_ascii=False))
-open(BASE + "split.html", "w", encoding="utf-8").write(HTML)
-print("saved split.html", len(HTML), "bytes | فئات:", len(S["ages"]))
+open(BASE + "offices.html", "w", encoding="utf-8").write(HTML)
+print("saved offices.html", len(HTML), "bytes | مكاتب:", len(S["offices"]))
