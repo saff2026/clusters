@@ -62,13 +62,14 @@ HTML = r"""<!DOCTYPE html>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
+ <div class="flt"><div class="lab">حالة الاكتمال:</div><div class="tabs" id="statT"></div></div>
  <div class="kpis" id="kpis"></div>
  <div id="content"></div>
 </div>
 <script>
 const S=__SPLIT__;
 const TARGET=S.target||6;
-let curAge=S.ages[0]||'', curRegion='الكل';
+let curAge=S.ages[0]||'', curRegion='الكل', curStatus='الكل';
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
@@ -89,10 +90,18 @@ function regionOptions(){
   sel.innerHTML='<option value="الكل">كل المناطق</option>'+regs.map(r=>'<option'+(r===curRegion?' selected':'')+'>'+r+'</option>').join('');
   sel.onchange=()=>{curRegion=sel.value;render();};
 }
+function statusTabs(){
+  const opts=['الكل','المكتملة','غير المكتملة'];
+  const el=document.getElementById('statT');
+  el.innerHTML=opts.map(o=>'<button class="tab'+(o===curStatus?' on':'')+'" data-s="'+o+'">'+o+'</button>').join('');
+  el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curStatus=b.dataset.s;render();});
+}
 function render(){
-  ageTabs(); regionOptions();
+  ageTabs(); regionOptions(); statusTabs();
   let arr=(S.byAge[curAge]||[]).slice();
   if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);
+  if(curStatus==='المكتملة')arr=arr.filter(g=>g.total>=TARGET);
+  else if(curStatus==='غير المكتملة')arr=arr.filter(g=>g.total<TARGET);
   const done=arr.filter(g=>g.total>=TARGET).length;
   const totTeams=arr.reduce((s,g)=>s+g.total,0);
   const cities=new Set(); arr.forEach(g=>g.cities.forEach(c=>cities.add(c.city)));
