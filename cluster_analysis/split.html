@@ -87,7 +87,7 @@ function allAgesData(){
     const ageList=S.ages.filter(a=>a in d.ages);
     const doneAges=ageList.filter(a=>d.ages[a]>=TARGET).length;
     const cities=Object.entries(d.cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
-    return {group:grp,region:d.region,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,
+    return {group:grp,region:d.region,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,ages:d.ages,
             agesN:ageList.length,doneAges:doneAges,allDone:ageList.length>0&&doneAges===ageList.length};
   }).sort((a,b)=>b.total-a.total);
 }
@@ -132,7 +132,6 @@ function render(){
     html+='<div class="rhd">'+rg+' <span class="rt">— '+nTeam(rt)+' · '+nGroup(gs.length)+' ('+rd+'/'+gs.length+' مكتملة)</span></div>';
     gs.forEach(g=>{
       const ok=isDone(g);
-      const mx=Math.max(TARGET,1,...g.cities.map(c=>c.n));
       const stTxt=isAll
         ?(g.allDone?'مكتملة في كل الفئات':'مكتملة في '+g.doneAges+' من '+g.agesN+' '+nCat(g.agesN))
         :(ok?'مكتمل'+(g.total>TARGET?' (زائد '+(g.total-TARGET)+')':''):'باقٍ '+(TARGET-g.total)+' للوصول إلى '+TARGET);
@@ -140,9 +139,19 @@ function render(){
         '<span class="badge">'+nTeam(g.total)+'</span>'+
         '<span class="st '+(ok?'ok':'no')+'">'+stTxt+'</span>'+
         '<span class="muted">'+nCity(g.cities.length)+'</span></div>';
-      html+=g.cities.map(c=>'<div class="crow"><div class="cn">'+c.city+'</div>'+
-        '<div class="track"><div class="fill" style="width:'+(c.n/mx*100)+'%"></div></div>'+
-        '<div class="v">'+nTeam(c.n)+'</div></div>').join('');
+      if(isAll){
+        const ags=S.ages.filter(a=>g.ages[a]!=null);
+        const mxa=Math.max(TARGET,1,...ags.map(a=>g.ages[a]));
+        html+=ags.map(a=>{const n=g.ages[a],dn=n>=TARGET;
+          return '<div class="crow"><div class="cn">'+a+'</div>'+
+            '<div class="track"><div class="fill" style="width:'+(n/mxa*100)+'%;background:'+(dn?'linear-gradient(90deg,#1a9850,#2ecc71)':'linear-gradient(90deg,#c0392b,#e74c3c)')+'"></div></div>'+
+            '<div class="v" style="color:'+(dn?'#7ee0a0':'#ff9a9a')+'">'+nTeam(n)+'</div></div>';}).join('');
+      } else {
+        const mx=Math.max(TARGET,1,...g.cities.map(c=>c.n));
+        html+=g.cities.map(c=>'<div class="crow"><div class="cn">'+c.city+'</div>'+
+          '<div class="track"><div class="fill" style="width:'+(c.n/mx*100)+'%"></div></div>'+
+          '<div class="v">'+nTeam(c.n)+'</div></div>').join('');
+      }
       html+='</div>';
     });
   });
