@@ -27,6 +27,7 @@ ws = wb["عدد الفرق لكل مدينة"]
 rows = list(ws.iter_rows(values_only=True))
 C2G = {}
 recs = []  # (age, city, grp)
+recs_cnt = []  # (age, city, grp, count) — لصفحة «تقسيم الفرق على المجموعات»
 for r in rows[2:]:
     if not r:
         continue
@@ -36,8 +37,10 @@ for r in rows[2:]:
     if not age or not city or not grp:
         continue
     city = CANON.get(city, city)
+    cnt = int(r[4]) if len(r) > 4 and isinstance(r[4], (int, float)) else 0
     C2G.setdefault(age, {})[city] = grp
     recs.append((age, city, grp))
+    recs_cnt.append((age, city, grp, cnt))
 
 # ربط المجموعة -> المكتب/المنطقة من صفحة «المدخلات» (المصدر الرسمي)
 GROFF, GRREG = {}, {}
@@ -197,6 +200,35 @@ if "عدد اللاعبين" in wb.sheetnames:
         if age and grp:
             players_data[age + "|" + grp] = {"n": cell_num(r, cn), "p": cell_num(r, cp)}
 json.dump(players_data, open(BASE + "players_data.json", "w", encoding="utf-8"),
+          ensure_ascii=False, indent=0)
+
+# ========== 6) تقسيم الفرق على المجموعات — من «عدد الفرق لكل مدينة» ==========
+# لكل (فئة، مجموعة): منطقتها، ومدنها مع عدد الفرق في كل مدينة، والإجمالي.
+def grp_region(grp):
+    r = GRREG.get(grp, "")
+    return REGNORM.get(r, r) or "غير محدد"
+
+split_map = {}  # (age, grp) -> {region, cities:{city:cnt}}
+ages_seen = []
+for age, city, grp, cnt in recs_cnt:
+    d = split_map.setdefault((age, grp), {"region": grp_region(grp), "cities": {}})
+    d["cities"][city] = d["cities"].get(city, 0) + cnt
+    if age not in ages_seen:
+        ages_seen.append(age)
+ages_seen.sort(key=lambda x: int("".join(ch for ch in x if ch.isdigit()) or 0))
+
+split_byAge = {}
+for (age, grp), d in split_map.items():
+    cities = sorted(d["cities"].items(), key=lambda kv: (-kv[1], kv[0]))
+    split_byAge.setdefault(age, []).append({
+        "group": grp, "region": d["region"],
+        "total": sum(d["cities"].values()),
+        "cities": [{"city": c, "n": n} for c, n in cities]})
+for age in split_byAge:
+    split_byAge[age].sort(key=lambda x: -x["total"])
+split_data = {"ages": ages_seen, "target": teams.get("target", 6),
+              "regions": M["regions"], "byAge": split_byAge}
+json.dump(split_data, open(BASE + "split_data.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=0)
 
 print("تم التحديث من:", XLSX)

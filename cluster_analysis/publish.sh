@@ -8,6 +8,7 @@ python3 cluster_analysis/build_full_map.py >/dev/null
 python3 cluster_analysis/build_dashboard.py >/dev/null
 python3 cluster_analysis/build_matches.py >/dev/null
 python3 cluster_analysis/build_players.py >/dev/null
+python3 cluster_analysis/build_split.py >/dev/null
 cp cluster_analysis/governorates_map.html cluster_analysis/index.html
 cp cluster_analysis/governorates_map.html docs/index.html
 cp cluster_analysis/dashboard.html docs/dashboard.html
@@ -19,6 +20,8 @@ cp cluster_analysis/matches.html /tmp/_pub_matches.html
 cp cluster_analysis/matches.html docs/matches.html
 cp cluster_analysis/players.html /tmp/_pub_players.html
 cp cluster_analysis/players.html docs/players.html
+cp cluster_analysis/split.html /tmp/_pub_split.html
+cp cluster_analysis/split.html docs/split.html
 if [ -f cluster_analysis/logo.png ]; then
   cp cluster_analysis/logo.png docs/logo.png
   cp cluster_analysis/logo.png /tmp/_pub_logo.png
@@ -35,8 +38,9 @@ cp /tmp/_pub_dash.html clusters/dashboard.html
 cp /tmp/_pub_dashv.html clusters/dashboard_view.html
 cp /tmp/_pub_matches.html clusters/matches.html
 cp /tmp/_pub_players.html clusters/players.html
+cp /tmp/_pub_split.html clusters/split.html
 [ -f /tmp/_pub_logo.png ] && cp /tmp/_pub_logo.png clusters/logo.png && git add clusters/logo.png
-git add clusters/index.html clusters/dashboard.html clusters/dashboard_view.html clusters/matches.html clusters/players.html
+git add clusters/index.html clusters/dashboard.html clusters/dashboard_view.html clusters/matches.html clusters/players.html clusters/split.html
 git commit -q -m "Update published clusters map + dashboard" || true
 git push origin main >/dev/null 2>&1
 git checkout "$DEV" >/dev/null 2>&1
