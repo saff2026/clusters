@@ -69,21 +69,41 @@ HTML = r"""<!DOCTYPE html>
 <script>
 const S=__SPLIT__;
 const TARGET=S.target||6;
-let curAge=S.ages[0]||'', curRegion='الكل', curStatus='الكل';
+const ALL='جميع الفئات';
+let curAge=ALL, curRegion='الكل', curStatus='الكل';
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
 function nGroup(n){return arCount(n,'مجموعة واحدة','مجموعتان','مجموعات','مجموعة');}
 function nCity(n){return arCount(n,'مدينة واحدة','مدينتان','مدن','مدينة');}
+function nCat(n){const m=n%100; return (m>=3&&m<=10)?'فئات':'فئة';}
 
 function ageTabs(){
+  const AGES=[ALL].concat(S.ages);
   const el=document.getElementById('ageT');
-  el.innerHTML=S.ages.map(a=>'<button class="tab'+(a===curAge?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
+  el.innerHTML=AGES.map(a=>'<button class="tab'+(a===curAge?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curAge=b.dataset.a;render();});
 }
+// «جميع الفئات»: تجميع كل مجموعة عبر الفئات (المدن بالجمع، والاكتمال = مكتملة في كل فئاتها)
+function allAgesData(){
+  const map={};
+  S.ages.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
+    const d=map[g.group]||(map[g.group]={region:g.region,cities:{},ages:{}});
+    g.cities.forEach(c=>{d.cities[c.city]=(d.cities[c.city]||0)+c.n;});
+    d.ages[age]=(d.ages[age]||0)+g.total;});});
+  return Object.keys(map).map(grp=>{
+    const d=map[grp];
+    const ageList=S.ages.filter(a=>a in d.ages);
+    const doneAges=ageList.filter(a=>d.ages[a]>=TARGET).length;
+    const cities=Object.entries(d.cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
+    return {group:grp,region:d.region,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,
+            agesN:ageList.length,doneAges:doneAges,allDone:ageList.length>0&&doneAges===ageList.length};
+  }).sort((a,b)=>b.total-a.total);
+}
+function curData(){ return curAge===ALL?allAgesData():(S.byAge[curAge]||[]).slice(); }
 function regionOptions(){
-  const arr=S.byAge[curAge]||[];
+  const arr=curData();
   const regs=[...new Set(arr.map(g=>g.region))].sort();
   const sel=document.getElementById('rgn');
   if(!regs.includes(curRegion))curRegion='الكل';
@@ -98,16 +118,18 @@ function statusTabs(){
 }
 function render(){
   ageTabs(); regionOptions(); statusTabs();
-  let arr=(S.byAge[curAge]||[]).slice();
+  const isAll=curAge===ALL;
+  const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
+  let arr=curData();
   if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);
-  if(curStatus==='المكتملة')arr=arr.filter(g=>g.total>=TARGET);
-  else if(curStatus==='غير المكتملة')arr=arr.filter(g=>g.total<TARGET);
-  const done=arr.filter(g=>g.total>=TARGET).length;
+  if(curStatus==='المكتملة')arr=arr.filter(isDone);
+  else if(curStatus==='غير المكتملة')arr=arr.filter(g=>!isDone(g));
+  const done=arr.filter(isDone).length;
   const totTeams=arr.reduce((s,g)=>s+g.total,0);
   const cities=new Set(); arr.forEach(g=>g.cities.forEach(c=>cities.add(c.city)));
   document.getElementById('kpis').innerHTML=
     '<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">عدد المجموعات</div></div>'+
-    '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done+'</div><div class="l">مجموعات مكتملة</div></div>'+
+    '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done+'</div><div class="l">'+(isAll?'مكتملة في كل الفئات':'مجموعات مكتملة')+'</div></div>'+
     '<div class="kpi"><div class="n">'+totTeams+'</div><div class="l">مجموع الفِرَق</div></div>'+
     '<div class="kpi"><div class="n">'+cities.size+'</div><div class="l">عدد المدن</div></div>';
   // تجميع حسب المنطقة
@@ -116,14 +138,17 @@ function render(){
   order.sort((a,b)=>R[b].reduce((s,g)=>s+g.total,0)-R[a].reduce((s,g)=>s+g.total,0));
   let html='';
   order.forEach(rg=>{
-    const gs=R[rg]; const rt=gs.reduce((s,g)=>s+g.total,0), rd=gs.filter(g=>g.total>=TARGET).length;
+    const gs=R[rg]; const rt=gs.reduce((s,g)=>s+g.total,0), rd=gs.filter(isDone).length;
     html+='<div class="rhd">'+rg+' <span class="rt">— '+nTeam(rt)+' · '+nGroup(gs.length)+' ('+rd+'/'+gs.length+' مكتملة)</span></div>';
     gs.forEach(g=>{
-      const ok=g.total>=TARGET;
+      const ok=isDone(g);
       const mx=Math.max(TARGET,1,...g.cities.map(c=>c.n));
+      const stTxt=isAll
+        ?(g.allDone?'مكتملة في كل الفئات':'مكتملة في '+g.doneAges+' من '+g.agesN+' '+nCat(g.agesN))
+        :(ok?'مكتمل'+(g.total>TARGET?' (زائد '+(g.total-TARGET)+')':''):'باقٍ '+(TARGET-g.total)+' للوصول إلى '+TARGET);
       html+='<div class="gcard'+(ok?' done':'')+'"><div class="ghead"><b>'+g.group+'</b>'+
         '<span class="badge">'+nTeam(g.total)+'</span>'+
-        '<span class="st '+(ok?'ok':'no')+'">'+(ok?'مكتمل'+(g.total>TARGET?' (زائد '+(g.total-TARGET)+')':''):'باقٍ '+(TARGET-g.total)+' للوصول إلى '+TARGET)+'</span>'+
+        '<span class="st '+(ok?'ok':'no')+'">'+stTxt+'</span>'+
         '<span class="muted">'+nCity(g.cities.length)+'</span></div>';
       html+=g.cities.map(c=>'<div class="crow"><div class="cn">'+c.city+'</div>'+
         '<div class="track"><div class="fill" style="width:'+(c.n/mx*100)+'%"></div></div>'+
