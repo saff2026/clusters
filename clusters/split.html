@@ -113,7 +113,7 @@ function render(){
   let arr=curData();
   if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);
   if(curStatus==='المكتملة')arr=arr.filter(isDone);
-  else if(curStatus==='غير المكتملة')arr=arr.filter(g=>!isDone(g));
+  else if(curStatus==='غير المكتملة')arr=arr.filter(g=>isAll?(g.doneAges===0):(g.total<TARGET));
   const done=arr.filter(isDone).length;
   const totTeams=arr.reduce((s,g)=>s+g.total,0);
   const cities=new Set(); arr.forEach(g=>g.cities.forEach(c=>cities.add(c.city)));
