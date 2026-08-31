@@ -40,6 +40,7 @@
  .crow .track{flex:1;background:#0b1c30;border-radius:6px;height:18px;overflow:hidden}
  .crow .fill{height:100%;background:linear-gradient(90deg,#1b6ca8,#3aa0e0);border-radius:6px;min-width:3px}
  .crow .v{width:64px;text-align:center;font-weight:800;color:#ffd166}
+ .cnames{font-size:12px;color:#8fb3cf;margin:-2px 2px 9px;line-height:1.7}
  .muted{color:#9fb6d0;font-size:12px}
 </style></head><body>
 <div class="top">
@@ -139,6 +140,7 @@ function render(){
         '<span class="badge">'+nTeam(g.total)+'</span>'+
         '<span class="st '+(ok?'ok':'no')+'">'+stTxt+'</span>'+
         '<span class="muted">'+nCity(g.cities.length)+'</span></div>';
+      html+='<div class="cnames">🏙️ '+g.cities.map(c=>c.city).join('، ')+'</div>';
       if(isAll){
         const ags=S.ages.filter(a=>g.ages[a]!=null);
         const mxa=Math.max(TARGET,1,...ags.map(a=>g.ages[a]));
