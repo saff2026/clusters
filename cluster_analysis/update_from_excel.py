@@ -13,6 +13,10 @@ from collections import defaultdict, Counter
 BASE = "/home/user/khitba/cluster_analysis/"
 XLSX = sys.argv[1] if len(sys.argv) > 1 else BASE + "latest.xlsx"
 CANON = {"جيزان": "جازان", "الجوف": "سكاكا"}
+# تجاوز يدوي بطلب الاتحاد: في تحت 11 وتحت 12، الخبر والظهران في «مجموعة الخبر»
+# (منفصلة عن مجموعة الدمام التي تبقى: الدمام وسيهات)
+GRP_OVERRIDE = {("تحت 11", "الخبر"): "مجموعة الخبر", ("تحت 11", "الظهران"): "مجموعة الخبر",
+                ("تحت 12", "الخبر"): "مجموعة الخبر", ("تحت 12", "الظهران"): "مجموعة الخبر"}
 SIFA = {"هواة": "هواة", "اكاديمية": "أكاديمية", "اكاديمة": "أكاديمية",
         "أكاديمية": "أكاديمية", "نادي": "نادي", "نالدي خاص": "نادي"}
 AGES_59 = ["تحت 5", "تحت 7", "تحت 9"]
@@ -37,6 +41,7 @@ for r in rows[2:]:
     if not age or not city or not grp:
         continue
     city = CANON.get(city, city)
+    grp = GRP_OVERRIDE.get((age, city), grp)
     cnt = int(r[4]) if len(r) > 4 and isinstance(r[4], (int, float)) else 0
     C2G.setdefault(age, {})[city] = grp
     recs.append((age, city, grp))
