@@ -51,6 +51,8 @@ HTML = r"""<!DOCTYPE html>
  .crow .fill{height:100%;background:linear-gradient(90deg,#1b6ca8,#3aa0e0);border-radius:6px;min-width:3px}
  .crow .v{width:64px;text-align:center;font-weight:800;color:#ffd166}
  .cnames{font-size:12px;color:#8fb3cf;margin:-2px 2px 9px;line-height:1.7}
+ .cnames .varyx{color:#ffcf6b;font-size:11px;font-weight:700}
+ .agc{font-size:10.5px;color:#7f97b3;margin:-2px 78px 8px 66px;line-height:1.5}
  .muted{color:#9fb6d0;font-size:12px}
 </style></head><body>
 <div class="top">
@@ -90,15 +92,19 @@ function ageTabs(){
 function allAgesData(){
   const map={};
   S.ages.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
-    const d=map[g.group]||(map[g.group]={region:g.region,cities:{},ages:{}});
+    const d=map[g.group]||(map[g.group]={region:g.region,cities:{},ages:{},agesCities:{}});
     g.cities.forEach(c=>{d.cities[c.city]=(d.cities[c.city]||0)+c.n;});
-    d.ages[age]=(d.ages[age]||0)+g.total;});});
+    d.ages[age]=(d.ages[age]||0)+g.total;
+    d.agesCities[age]=g.cities.map(c=>c.city);});});
   return Object.keys(map).map(grp=>{
     const d=map[grp];
     const ageList=S.ages.filter(a=>a in d.ages);
     const doneAges=ageList.filter(a=>d.ages[a]>=TARGET).length;
     const cities=Object.entries(d.cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
+    const sig=a=>[...(d.agesCities[a]||[])].sort().join('،');
+    const citiesVary=new Set(ageList.map(sig)).size>1;
     return {group:grp,region:d.region,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,ages:d.ages,
+            agesCities:d.agesCities,citiesVary:citiesVary,
             agesN:ageList.length,doneAges:doneAges,allDone:ageList.length>0&&doneAges===ageList.length};
   }).sort((a,b)=>b.total-a.total);
 }
@@ -150,14 +156,16 @@ function render(){
         '<span class="badge">'+nTeam(g.total)+'</span>'+
         '<span class="st '+(ok?'ok':'no')+'">'+stTxt+'</span>'+
         '<span class="muted">'+nCity(g.cities.length)+'</span></div>';
-      html+='<div class="cnames">🏙️ '+g.cities.map(c=>c.city).join('، ')+'</div>';
+      const vary=isAll&&g.citiesVary;
+      html+='<div class="cnames">🏙️ '+g.cities.map(c=>c.city).join('، ')+(vary?' <span class="varyx">(المدن تختلف حسب الفئة)</span>':'')+'</div>';
       if(isAll){
         const ags=S.ages.filter(a=>g.ages[a]!=null);
         const mxa=Math.max(TARGET,1,...ags.map(a=>g.ages[a]));
         html+=ags.map(a=>{const n=g.ages[a],dn=n>=TARGET;
+          const ac=vary?'<div class="agc">'+(g.agesCities[a]||[]).join('، ')+'</div>':'';
           return '<div class="crow"><div class="cn">'+a+'</div>'+
             '<div class="track"><div class="fill" style="width:'+(n/mxa*100)+'%;background:'+(dn?'linear-gradient(90deg,#1a9850,#2ecc71)':'linear-gradient(90deg,#c0392b,#e74c3c)')+'"></div></div>'+
-            '<div class="v" style="color:'+(dn?'#7ee0a0':'#ff9a9a')+'">'+nTeam(n)+'</div></div>';}).join('');
+            '<div class="v" style="color:'+(dn?'#7ee0a0':'#ff9a9a')+'">'+nTeam(n)+'</div></div>'+ac;}).join('');
       } else {
         const mx=Math.max(TARGET,1,...g.cities.map(c=>c.n));
         html+=g.cities.map(c=>'<div class="crow"><div class="cn">'+c.city+'</div>'+
