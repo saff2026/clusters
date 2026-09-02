@@ -27,7 +27,7 @@ if [ -f cluster_analysis/logo.png ]; then
   cp cluster_analysis/logo.png /tmp/_pub_logo.png
 fi
 DEV=$(git rev-parse --abbrev-ref HEAD)
-git add -A && git commit -q -m "Update map + dashboard build" || true
+git add -A && git commit -q -m "Update map + dashboard build" -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01SbBJEs6uTpJ66VfDZ59Deq" || true
 git push -u origin "$DEV" >/dev/null 2>&1 || true
 git fetch origin main >/dev/null 2>&1
 git checkout main >/dev/null 2>&1
@@ -41,7 +41,7 @@ cp /tmp/_pub_players.html clusters/players.html
 cp /tmp/_pub_split.html clusters/split.html
 [ -f /tmp/_pub_logo.png ] && cp /tmp/_pub_logo.png clusters/logo.png && git add clusters/logo.png
 git add clusters/index.html clusters/dashboard.html clusters/dashboard_view.html clusters/matches.html clusters/players.html clusters/split.html
-git commit -q -m "Update published clusters map + dashboard" || true
+git commit -q -m "Update published clusters map + dashboard" -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01SbBJEs6uTpJ66VfDZ59Deq" || true
 git push origin main >/dev/null 2>&1
 git checkout "$DEV" >/dev/null 2>&1
 echo "نُشر: https://saff2026.github.io/clusters/clusters/ و /dashboard.html"
