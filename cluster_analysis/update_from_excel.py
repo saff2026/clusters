@@ -232,6 +232,13 @@ for age, city, grp, cnt in recs_cnt:
         ages_seen.append(age)
 ages_seen.sort(key=lambda x: int("".join(ch for ch in x if ch.isdigit()) or 0))
 
+# منطقة المجموعة = المنطقة الغالبة لمدنها (المصدر الأدق)؛ ولا نتركها «غير محدد» أبدًا إن أمكن
+for (age, grp), d in split_map.items():
+    cc = Counter(REG.get(c, "غير محدد") for c in d["cities"])
+    cc.pop("غير محدد", None)
+    if cc and (d["region"] == "غير محدد" or d["region"] not in cc):
+        d["region"] = cc.most_common(1)[0][0]
+
 split_byAge = {}
 for (age, grp), d in split_map.items():
     cities = sorted(d["cities"].items(), key=lambda kv: (-kv[1], kv[0]))
