@@ -108,9 +108,7 @@ MDATA = {"ages": T["ages"], "byAge": byAge, "allGroups": allGroups,
 HTML = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الخريطة وعدد اللاعبين لكل مجموعة</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>عدد اللاعبين لكل مجموعة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
  *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#eafff3}
@@ -136,7 +134,7 @@ HTML = r"""<!DOCTYPE html>
  .card h3{margin:0 0 12px;font-size:15px;color:#ffd166}
  .muted{color:#8fdcb4;font-size:12px}
  .row{padding:9px 10px;border-bottom:1px solid #0d3a26;font-size:14px}
- .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
+ .row.clk{border-radius:8px}
  .row b{font-size:15px} .row .tot{color:#ffd166;font-weight:800}
  .row .sub{font-size:11.5px;color:#8ff0b0;margin-top:4px;line-height:1.9;font-weight:500}
  .row .cnames{font-size:11px;color:#7fbfa0;margin-top:3px;font-weight:400;line-height:1.7}
@@ -166,7 +164,7 @@ HTML = r"""<!DOCTYPE html>
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
- <h1>الخريطة وعدد اللاعبين لكل مجموعة</h1>
+ <h1>عدد اللاعبين لكل مجموعة</h1>
 </div>
 <div class="wrap">
  <nav class="nav">
@@ -174,7 +172,6 @@ HTML = r"""<!DOCTYPE html>
    <a class="navlink on" href="players.html">عدد اللاعبين</a>
  </nav>
  <div class="tabs" id="ageT"></div>
- <div id="map"></div>
  <div class="kpis" id="kpis"></div>
  <div class="card" id="chartCard" style="display:none;margin-bottom:16px"><h3>تفصيل اللاعبين لكل فئة</h3><div id="chart"></div></div>
  <div class="card"><h3 id="ttl"></h3>

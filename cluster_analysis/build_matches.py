@@ -112,9 +112,7 @@ MDATA = {"ages": T["ages"], "byAge": byAge, "allGroups": allGroups,
 HTML = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الخريطة وعدد المباريات لكل مجموعة</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>عدد المباريات لكل مجموعة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
  *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#eafff3}
@@ -143,12 +141,12 @@ HTML = r"""<!DOCTYPE html>
  .bar .lab .sub{font-size:10px;color:#7fbfa0;margin-top:2px;font-weight:400}
  .bar .track{flex:1;background:#04150e;border-radius:6px;height:22px;overflow:hidden}
  .bar .fill{height:100%;background:linear-gradient(90deg,#159a80,#2fe6b8);border-radius:6px;min-width:3px}
- .bar.clk{cursor:pointer;border-radius:8px;padding:4px 6px;margin:1px -6px 8px} .bar.clk:hover{background:#0d4b32}
+ .bar.clk{border-radius:8px;padding:4px 6px;margin:1px -6px 8px}
  .bar .val{width:70px;text-align:center;font-weight:800;color:#ffd166}
  .bar .teams{width:70px;text-align:center;color:#8fdcb4;font-size:12px}
  .muted{color:#8fdcb4;font-size:12px}
  .row{padding:9px 10px;border-bottom:1px solid #0d3a26;font-size:14px}
- .row.clk{cursor:pointer;border-radius:8px} .row.clk:hover{background:#0d4b32}
+ .row.clk{border-radius:8px}
  .row b{font-size:15px} .row .tot{color:#ffd166;font-weight:800}
  .row .sub{font-size:11.5px;color:#8ff0b0;margin-top:4px;line-height:1.9;font-weight:500}
  .row .cnames{font-size:11px;color:#7fbfa0;margin-top:3px;font-weight:400;line-height:1.7}
@@ -183,7 +181,7 @@ HTML = r"""<!DOCTYPE html>
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
- <h1>الخريطة وعدد المباريات لكل مجموعة</h1>
+ <h1>عدد المباريات لكل مجموعة</h1>
 </div>
 <div class="wrap">
  <nav class="nav">
@@ -191,7 +189,6 @@ HTML = r"""<!DOCTYPE html>
    <a class="navlink" href="players.html">عدد اللاعبين</a>
  </nav>
  <div class="tabs" id="ageT"></div>
- <div id="map"></div>
  <div class="kpis" id="kpis"></div>
  <div class="card" id="chartCard" style="display:none;margin-bottom:16px"><h3>تفصيل المباريات لكل فئة</h3><div id="chart"></div></div>
  <div class="card"><h3 id="ttl"></h3>

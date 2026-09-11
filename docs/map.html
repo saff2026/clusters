@@ -12,33 +12,33 @@
  body{margin:0;font-family:'Tajawal',sans-serif}
  .leaflet-container{font-family:'Tajawal',sans-serif}
  #wrap{display:flex;height:100vh}
- #side{width:352px;background:#0f2540;color:#e9eef5;overflow-y:auto;flex-shrink:0;font-size:13px;line-height:1.55}
+ #side{width:352px;background:#06281c;color:#e9eef5;overflow-y:auto;flex-shrink:0;font-size:13px;line-height:1.55}
  #side::-webkit-scrollbar{width:9px}
- #side::-webkit-scrollbar-thumb{background:#2a4a6e;border-radius:6px}
- #side::-webkit-scrollbar-track{background:#0f2540}
+ #side::-webkit-scrollbar-thumb{background:#1c7a52;border-radius:6px}
+ #side::-webkit-scrollbar-track{background:#06281c}
  #map{flex:1}
- .hd{background:#0a3d62;padding:14px 16px;font-weight:700;font-size:15.5px;position:sticky;top:0;z-index:5;
+ .hd{background:#006C35;padding:14px 16px;font-weight:700;font-size:15.5px;position:sticky;top:0;z-index:5;
    box-shadow:0 2px 8px rgba(0,0,0,.35)}
- .sec{padding:14px 16px;border-bottom:1px solid #1c3a5e}
+ .sec{padding:14px 16px;border-bottom:1px solid #12563a}
  .sec h3{margin:0 0 10px;font-size:14px;font-weight:700;color:#ffd166}
  .lab{font-size:12px;color:#9fb6d0;margin:0 0 6px;font-weight:500}
  .hint{font-size:11.5px;color:#8aa3bf;line-height:1.6;margin-top:7px}
  .note{font-size:11.5px;color:#9fdca0;margin:4px 0 7px}
- select,input[type=text]{width:100%;padding:9px 10px;border-radius:8px;border:1px solid #2a4a6e;
-   background:#13294a;color:#fff;font-size:13px;margin-bottom:7px;font-family:'Tajawal',sans-serif}
- button{width:100%;padding:9px 10px;border-radius:8px;border:0;background:#1b6ca8;color:#fff;
+ select,input[type=text]{width:100%;padding:9px 10px;border-radius:8px;border:1px solid #1c7a52;
+   background:#0f3b28;color:#fff;font-size:13px;margin-bottom:7px;font-family:'Tajawal',sans-serif}
+ button{width:100%;padding:9px 10px;border-radius:8px;border:0;background:#0d5136;color:#fff;
    font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:7px;transition:background .15s}
- button:hover{background:#2980b9}
+ button:hover{background:#12734f}
  .gmaps{background:#2e7d32} .gmaps:hover{background:#388e3c}
  .danger{background:#9b3535} .danger:hover{background:#c0392b}
  .row{display:flex;gap:7px} .row button{margin-bottom:0;flex:1}
- .dsbtn{width:auto;flex:0 0 auto;padding:7px 14px;border-radius:18px;background:#16314f;
-   border:1px solid #2a4a6e;font-size:13px;margin:0}
- .dsbtn:hover{background:#1d3e63} .dsbtn.on{background:#ffd166;color:#0a3d62;border-color:#ffd166}
+ .dsbtn{width:auto;flex:0 0 auto;padding:7px 14px;border-radius:18px;background:#0d4b32;
+   border:1px solid #1c7a52;font-size:13px;margin:0}
+ .dsbtn:hover{background:#1d3e63} .dsbtn.on{background:#ffd166;color:#006C35;border-color:#ffd166}
  .dsbtn.on:hover{background:#ffd166}
- .res{background:#13294a;border-radius:8px;padding:9px 10px;font-size:12.5px;line-height:1.7;margin-bottom:7px}
+ .res{background:#0f3b28;border-radius:8px;padding:9px 10px;font-size:12.5px;line-height:1.7;margin-bottom:7px}
  .res b{color:#ffd166}
- .cl{padding:8px 10px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:#16314f;
+ .cl{padding:8px 10px;border-radius:7px;margin-bottom:6px;cursor:pointer;background:#0d4b32;
    border-right:5px solid #888;font-size:12.5px;line-height:1.5}
  .cl:hover{background:#1d3e63}
  .cl .v{float:left;font-size:10.5px;padding:2px 7px;border-radius:10px;color:#fff;font-weight:700}
@@ -57,9 +57,9 @@
  .mapopts input{width:auto;margin:0 0 0 6px;vertical-align:-2px;cursor:pointer}
  .leaflet-tooltip.lbl{background:transparent!important;border:0!important;box-shadow:none!important;padding:0}
  .leaflet-tooltip.lbl:before{display:none!important}
- .leg{background:#13294a;font-size:11.5px;line-height:1.9}
+ .leg{background:#0f3b28;font-size:11.5px;line-height:1.9}
  small{color:#9fb6d0;font-size:11.5px;line-height:1.6;display:block}
- hr{border:0;border-top:1px solid #1c3a5e;margin:11px 0}
+ hr{border:0;border-top:1px solid #12563a;margin:11px 0}
  label{font-size:13px;cursor:pointer;display:inline-block;margin-bottom:4px}
  input[type=checkbox]{width:auto;margin:0 0 0 7px;vertical-align:-2px;cursor:pointer}
  .saffnav{flex-wrap:wrap!important}
@@ -68,8 +68,8 @@
 <div id="errbar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#b00020;color:#fff;padding:8px 12px;font-size:13px;font-family:Tajawal"></div>
 <div id="wrap">
  <div id="side">
-  <nav class="saffnav"><a class="" href="index.html">🏠 الرئيسية</a><a class="on" href="map.html">🗺️ الخريطة</a><a class="" href="dashboard.html">📊 لوحة الفرق</a><a class="" href="split.html">🧩 التقسيم</a><a class="" href="matches.html">⚽ المباريات</a><a class="" href="players.html">👥 اللاعبون</a></nav>
-  <div class="hd">🗺️ محافظات المملكة — المجموعات وقياس المسافات <span style="font-size:10px;color:#9fb6d0;font-weight:400">نسخة 09-11 18:39</span></div>
+  <nav class="saffnav"><a class="" href="index.html">🏠 الرئيسية</a><a class="on" href="map.html">🗺️ الخريطة</a><a class="" href="dashboard.html">📊 لوحة الفرق</a><a class="" href="split.html">🧩 التقسيم</a><a class="" href="matches.html">⚽ المباريات واللاعبون</a></nav>
+  <div class="hd">🗺️ محافظات المملكة — المجموعات وقياس المسافات <span style="font-size:10px;color:#9fb6d0;font-weight:400">نسخة 09-11 18:48</span></div>
 
   <div class="sec"><div class="lab">الفئة العمرية:</div>
    <div id="agetabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
@@ -424,9 +424,9 @@ function groupBlock(id){const c=CL[id];const d=document.createElement('div');d.s
     '<br>أقصى مسافة/زمن: <b>'+(c.cities.length>1?fmt(st.mx/60):'—')+'</b>'+
     '<br>التقييم: <b style="color:'+vc+'">'+v+'</b>'+(st.nr?'<br><span style="color:#e6a">'+st.nr+' مسار تقديري</span>':'')+
     '<div style="color:#9fb6d0;font-size:11px;margin-top:3px">'+c.cities.join('، ')+'</div>';
-  popBtn(d,'🔍 تقريب على المجموعة','#1b6ca8',()=>{map.closePopup();focusCluster(id);});
+  popBtn(d,'🔍 تقريب على المجموعة','#0d5136',()=>{map.closePopup();focusCluster(id);});
   const inp=document.createElement('input');inp.type='text';inp.value=id;
-  inp.style.cssText='margin-top:7px;width:100%;padding:6px;border-radius:5px;border:1px solid #2a4a6e;background:#13294a;color:#fff;font-family:Tajawal';
+  inp.style.cssText='margin-top:7px;width:100%;padding:6px;border-radius:5px;border:1px solid #1c7a52;background:#0f3b28;color:#fff;font-family:Tajawal';
   d.appendChild(inp);
   popBtn(d,'✒️ تغيير اسم المجموعة','#6a4aa0',()=>{const nn=inp.value.trim();if(!nn)return;
     if(nn!==id&&CL[nn]){inp.style.borderColor='#ff5252';return;}
@@ -445,12 +445,12 @@ function popupHtml(n){const p=byName[n],id=ptCl[n],ex=excluded.has(n);const d=do
     return d;}
   if(ex){popBtn(d,'↩️ أرجعها للتجميع','#2e7d32',()=>includeCity(n));}
   else if(id&&CL[id]){
-    const sep=document.createElement('div');sep.style.cssText='margin-top:6px;border-top:1px solid #2a4a6e;padding-top:6px';
+    const sep=document.createElement('div');sep.style.cssText='margin-top:6px;border-top:1px solid #1c7a52;padding-top:6px';
     sep.appendChild(groupBlock(id));d.appendChild(sep);
     if(CL[id].cities.length===1)popBtn(d,'🗑️ احذف هذه المجموعة','#7a2e2e',()=>ejectCity(n));
     popBtn(d,'🚫 استبعد '+n+' من التجميع','#8a5a00',()=>excludeCity(n));
   } else {
-    popBtn(d,'➕ اجعلها مجموعة مستقلة','#1b6ca8',()=>{const w=applyMove(n,'__new__');map.closePopup();document.getElementById('estat').innerHTML='➕ أنشئت <b>'+w+'</b>';});
+    popBtn(d,'➕ اجعلها مجموعة مستقلة','#0d5136',()=>{const w=applyMove(n,'__new__');map.closePopup();document.getElementById('estat').innerHTML='➕ أنشئت <b>'+w+'</b>';});
     popBtn(d,'🚫 استبعدها من التجميع','#8a5a00',()=>excludeCity(n));
   }
   return d;}
@@ -557,7 +557,7 @@ function renderList(){const cl=document.getElementById('cllist');cl.innerHTML=''
     d.appendChild(cb);d.appendChild(rb);d.appendChild(body);d.onclick=()=>focusCluster(id);cl.appendChild(d);});}
 function startRename(d,id){if(isLocked()){lockToast();return;}d.onclick=null;d.innerHTML='';
   const inp=document.createElement('input');inp.type='text';inp.value=id;
-  inp.style.cssText='width:68%;padding:5px;border-radius:5px;border:1px solid #2a4a6e;background:#13294a;color:#fff;font-family:Tajawal,sans-serif';
+  inp.style.cssText='width:68%;padding:5px;border-radius:5px;border:1px solid #1c7a52;background:#0f3b28;color:#fff;font-family:Tajawal,sans-serif';
   inp.onclick=e=>e.stopPropagation();
   const ok=document.createElement('button');ok.textContent='✓ حفظ';
   ok.style.cssText='width:auto;margin:0 5px;padding:5px 10px;background:#2e7d32;border:0;border-radius:5px;color:#fff;cursor:pointer;font-family:Tajawal';
@@ -595,7 +595,7 @@ function renderDiff(){const el=document.getElementById('diffbox');if(!el)return;
     else if(fullFrom&&fullTo){icon='✏️';label='«'+t.from+'» أُعيدت تسميتها إلى «'+t.to+'»';}
     else if(fullFrom){icon='📦';label='«'+t.from+'» بالكامل ضُمّت إلى «'+t.to+'»';}
     else{icon='↪️';label='نُقلت من «'+t.from+'» إلى «'+t.to+'»';}
-    html+='<div style="padding:4px 0;border-bottom:1px solid #1c3a5e"><b>'+icon+' '+label+'</b>'+
+    html+='<div style="padding:4px 0;border-bottom:1px solid #12563a"><b>'+icon+' '+label+'</b>'+
       ((fullFrom&&fullTo)?'':'<br><span style="color:#9fb6d0;font-size:11px">'+t.cities.join('، ')+'</span>')+'</div>';});
   el.innerHTML=html;}
 function updateLockUI(){const lb=document.getElementById('lockbar');if(lb)lb.style.display=isLocked()?'block':'none';}

@@ -4,12 +4,11 @@
 
 # (المفتاح، النص، الرابط)
 NAV_ITEMS = [
-    ("home",      "🏠 الرئيسية",   "index.html"),
-    ("map",       "🗺️ الخريطة",    "map.html"),
-    ("dashboard", "📊 لوحة الفرق", "dashboard.html"),
-    ("split",     "🧩 التقسيم",    "split.html"),
-    ("matches",   "⚽ المباريات",  "matches.html"),
-    ("players",   "👥 اللاعبون",   "players.html"),
+    ("home",      "🏠 الرئيسية",          "index.html"),
+    ("map",       "🗺️ الخريطة",           "map.html"),
+    ("dashboard", "📊 لوحة الفرق",        "dashboard.html"),
+    ("split",     "🧩 التقسيم",           "split.html"),
+    ("mp",        "⚽ المباريات واللاعبون", "matches.html"),
 ]
 
 NAV_CSS = (

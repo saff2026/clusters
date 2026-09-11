@@ -14,9 +14,14 @@ python3 cluster_analysis/build_landing.py >/dev/null
 # حقن شريط التنقّل الموحّد في الصفحات العادية (الخريطة تحمل الشريط من مولّدها)
 python3 cluster_analysis/inject_nav.py cluster_analysis/dashboard.html dashboard >/dev/null
 python3 cluster_analysis/inject_nav.py cluster_analysis/dashboard_view.html dashboard >/dev/null
-python3 cluster_analysis/inject_nav.py cluster_analysis/matches.html matches >/dev/null
-python3 cluster_analysis/inject_nav.py cluster_analysis/players.html players >/dev/null
+python3 cluster_analysis/inject_nav.py cluster_analysis/matches.html mp >/dev/null
+python3 cluster_analysis/inject_nav.py cluster_analysis/players.html mp >/dev/null
 python3 cluster_analysis/inject_nav.py cluster_analysis/split.html split >/dev/null
+# توحيد الهوية على الأخضر الرسمي (تحويل صفحات الهوية الزرقاء)
+python3 cluster_analysis/theme_unify.py cluster_analysis/dashboard.html >/dev/null
+python3 cluster_analysis/theme_unify.py cluster_analysis/dashboard_view.html >/dev/null
+python3 cluster_analysis/theme_unify.py cluster_analysis/split.html >/dev/null
+python3 cluster_analysis/theme_unify.py cluster_analysis/governorates_map.html >/dev/null
 
 # النسخ المحلية + docs/ : index = الواجهة، map.html = الخريطة
 cp cluster_analysis/landing.html cluster_analysis/index.html
