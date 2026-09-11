@@ -1,4 +1,26 @@
-<!doctype html><html lang="ar" dir="rtl"><head>
+# -*- coding: utf-8 -*-
+"""يبني صفحة الواجهة (index) بأزرار لكل صفحات الموقع."""
+import os
+
+CARDS = [
+    ("map.html",       "🗺️", "الخريطة",     "محافظات المملكة والمجموعات وقياس المسافات بينها"),
+    ("dashboard.html", "📊", "لوحة الفرق",   "أعداد الفرق المسجَّلة حسب الفئة والمنطقة والمكتب والصفة"),
+    ("split.html",     "🧩", "تقسيم الفرق",  "تقسيم الفرق على المجموعات ومدى اكتمالها"),
+    ("matches.html",   "⚽", "المباريات",    "عدد المباريات لكل مجموعة على الخريطة"),
+    ("players.html",   "👥", "اللاعبون",     "عدد اللاعبين لكل مجموعة على الخريطة"),
+]
+
+cards_html = "".join(
+    '<a class="card" href="{h}"><div class="ic">{i}</div>'
+    '<div class="ttl">{t}</div><div class="dsc">{d}</div>'
+    '<div class="go">افتح ←</div></a>'.format(h=h, i=i, t=t, d=d)
+    for h, i, t, d in CARDS
+)
+
+logo_tag = ('<img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" '
+            'onerror="this.remove()">')
+
+HTML = """<!doctype html><html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>بطولات الواعدين والبراعم — موسم 26/27</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -23,9 +45,13 @@ h1{font-size:26px;font-weight:800;margin:0 0 6px;text-align:center;line-height:1
 .foot{margin-top:34px;font-size:12px;color:#8fc4ac;text-align:center}
 @media(max-width:560px){h1{font-size:21px}.logo{height:74px}}
 </style></head><body>
-<img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()">
+""" + logo_tag + """
 <h1>بطولات الواعدين والبراعم — موسم 26/27</h1>
 <div class="sub">اختر الصفحة التي تريد عرضها</div>
-<div class="grid"><a class="card" href="map.html"><div class="ic">🗺️</div><div class="ttl">الخريطة</div><div class="dsc">محافظات المملكة والمجموعات وقياس المسافات بينها</div><div class="go">افتح ←</div></a><a class="card" href="dashboard.html"><div class="ic">📊</div><div class="ttl">لوحة الفرق</div><div class="dsc">أعداد الفرق المسجَّلة حسب الفئة والمنطقة والمكتب والصفة</div><div class="go">افتح ←</div></a><a class="card" href="split.html"><div class="ic">🧩</div><div class="ttl">تقسيم الفرق</div><div class="dsc">تقسيم الفرق على المجموعات ومدى اكتمالها</div><div class="go">افتح ←</div></a><a class="card" href="matches.html"><div class="ic">⚽</div><div class="ttl">المباريات</div><div class="dsc">عدد المباريات لكل مجموعة على الخريطة</div><div class="go">افتح ←</div></a><a class="card" href="players.html"><div class="ic">👥</div><div class="ttl">اللاعبون</div><div class="dsc">عدد اللاعبين لكل مجموعة على الخريطة</div><div class="go">افتح ←</div></a></div>
+<div class="grid">""" + cards_html + """</div>
 <div class="foot">الاتحاد السعودي لكرة القدم</div>
-</body></html>
+</body></html>"""
+
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "landing.html")
+open(out, "w", encoding="utf-8").write(HTML)
+print("تم بناء صفحة الواجهة:", out)

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """خريطة شاملة: كل المحافظات + المجموعات + أداة قياس المسافة بين أي مدينتين."""
-import json, re
+import json, re, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from nav_bar import NAV_CSS, nav_html
 
 recs = json.load(open("/home/user/khitba/cluster_analysis/governorates_geo.json"))["records"]
 D = json.load(open("/home/user/khitba/cluster_analysis/data.json"))
@@ -259,17 +261,20 @@ HTML = """<!DOCTYPE html>
  hr{border:0;border-top:1px solid #1c3a5e;margin:11px 0}
  label{font-size:13px;cursor:pointer;display:inline-block;margin-bottom:4px}
  input[type=checkbox]{width:auto;margin:0 0 0 7px;vertical-align:-2px;cursor:pointer}
+ .saffnav{flex-wrap:wrap!important}
+__NAVCSS__
 </style></head><body>
 <div id="errbar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#b00020;color:#fff;padding:8px 12px;font-size:13px;font-family:Tajawal"></div>
 <div id="wrap">
  <div id="side">
-  <div class="hd">🗺️ محافظات المملكة — المجموعات وقياس المسافات <span style="font-size:10px;color:#9fb6d0;font-weight:400">نسخة __BUILD__</span>
-   <a href="dashboard.html" style="float:left;background:#2e7d32;color:#fff;padding:4px 10px;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none">📊 لوحة الفرق</a></div>
+  __NAVBAR__
+  <div class="hd">🗺️ محافظات المملكة — المجموعات وقياس المسافات <span style="font-size:10px;color:#9fb6d0;font-weight:400">نسخة __BUILD__</span></div>
 
   <div class="sec"><div class="lab">الفئة العمرية:</div>
    <div id="agetabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
    <div class="lab" style="margin-top:10px">خيار التجميع:</div>
    <div id="opttabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+   <div id="lockbar" style="display:none;margin-top:9px;background:#3a2f00;border:1px solid #ffd166;color:#ffd166;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700">🔒 خيار «اكسل» رسمي وغير قابل للتعديل — للتجربة انسخه إلى «خيار 1/2/3».</div>
    <div id="diffbox" style="margin-top:8px;max-height:160px;overflow-y:auto;font-size:12px"></div>
   </div>
 
@@ -417,7 +422,7 @@ function resetAll(){const b=document.getElementById('resetbtn');const now=Date.n
   for(const k in store)delete store[k];defaultInit();
   const v=document.getElementById('vnone');if(v)v.checked=true;
   updateDsUI();refreshSelectors();renderAll();}
-function swapOpt23(){const age=ageOf(curKey);const k2=age+' — خيار 2',k3=age+' — خيار 3';
+function swapOpt23(){if(isLocked()){lockToast();return;}const age=ageOf(curKey);const k2=age+' — خيار 2',k3=age+' — خيار 3';
   if(!DS[k2]||!DS[k3])return;
   store[curKey]={CL,ptCl,hidden,newCount,excluded};
   if(!store[k2])store[k2]=buildLive(k2);
@@ -466,6 +471,10 @@ function copyOpt2to3(){const age=ageOf(curKey);const src=age+' — خيار 2',d
 function ageOf(k){return k.split(' — ')[0];}
 function optOf(k){return k.split(' — ')[1]||k;}
 function dsLabel(age){return /^[0-9]/.test(age)?'تحت '+age:age;}
+// خيار «اكسل» رسمي وغير قابل للتعديل
+function isLocked(){return optOf(curKey)==='اكسل';}
+function lockToast(){const el=document.getElementById('estat');
+  if(el)el.innerHTML='🔒 خيار «اكسل» رسمي وغير قابل للتعديل — للتجربة انسخه إلى «خيار 1/2/3».';}
 
 // ===== اكتمال المجموعات (يُحسب من أعداد الفرق لكل مدينة/فئة) =====
 let onlyComplete=false;
@@ -545,7 +554,7 @@ function renameKey(oldId,newId){if(oldId===newId||CL[newId])return oldId;
 function autoRename(id){if(!CL[id]||CL[id].manual)return id;
   let want=nameFor(CL[id].cities);if(want===id)return id;
   if(CL[want])want=uniqueName(want);return renameKey(id,want);}
-function optimize(){const os=document.getElementById('optstat');
+function optimize(){if(isLocked()){lockToast();return;}const os=document.getElementById('optstat');
  try{
   const cities=Object.values(CL).flatMap(c=>c.cities);
   if(!cities.length){if(os){os.textContent='⚠ لا توجد مدن في هذا الخيار';os.style.color='#ffb4b4';}return;}
@@ -570,7 +579,7 @@ function greedyCover(cities,Tmin){const sorted=[...cities].filter(c=>byName[c]).
     for(const g of groups){if(g.every(o=>gd(city,o).sec/60<=Tmin)){g.push(city);placed=true;break;}}
     if(!placed)groups.push([city]);});return groups;}
 function clusterDiam(g){let mx=0;for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){const s=gd(g[i],g[j]).sec;if(s>mx)mx=s;}return mx;}
-function optimizeK(){const os=document.getElementById('optstat2');
+function optimizeK(){if(isLocked()){lockToast();return;}const os=document.getElementById('optstat2');
  try{
   const cities=Object.values(CL).flatMap(c=>c.cities).filter(c=>byName[c]&&!excluded.has(c));
   if(!cities.length){if(os){os.textContent='⚠ لا توجد مدن';os.style.color='#ffb4b4';}return;}
@@ -629,6 +638,10 @@ function popupHtml(n){const p=byName[n],id=ptCl[n],ex=excluded.has(n);const d=do
   if(ex)s+='<br><b style="color:#ff8a8a">🚫 مستبعدة من التجميع</b>';
   else if(!id||!CL[id])s+='<br>بدون مجموعة';
   d.innerHTML=s;
+  if(isLocked()){
+    if(id&&CL[id])d.innerHTML+='<br>المجموعة: <b>'+id+'</b><div style="color:#9fb6d0;font-size:11px;margin-top:3px">'+CL[id].cities.join('، ')+'</div>';
+    d.innerHTML+='<div style="margin-top:7px;color:#ffd166;font-size:11.5px;font-weight:700">🔒 خيار «اكسل» رسمي وغير قابل للتعديل</div>';
+    return d;}
   if(ex){popBtn(d,'↩️ أرجعها للتجميع','#2e7d32',()=>includeCity(n));}
   else if(id&&CL[id]){
     const sep=document.createElement('div');sep.style.cssText='margin-top:6px;border-top:1px solid #2a4a6e;padding-top:6px';
@@ -643,7 +656,7 @@ function popupHtml(n){const p=byName[n],id=ptCl[n],ex=excluded.has(n);const d=do
 DATA.points.forEach(p=>{const m=L.circleMarker([p.lat,p.lon],{radius:p.cat==='مقر'?8:5.5,
    color:'#222',weight:1,fillColor:colorOf(p.n),fillOpacity:0.95});
   m.bindPopup(()=>popupHtml(p.n)); m.bindTooltip(p.n,{direction:'top'}); m.addTo(map); markers[p.n]=m;
-  m.on('mousedown',e=>{connectFrom=p.n;map.dragging.disable();L.DomEvent.stop(e);});});
+  m.on('mousedown',e=>{if(isLocked())return;connectFrom=p.n;map.dragging.disable();L.DomEvent.stop(e);});});
 map.on('mousemove',e=>{if(!connectFrom)return;const a=byName[connectFrom];
   if(rubber)map.removeLayer(rubber);
   rubber=L.polyline([[a.lat,a.lon],[e.latlng.lat,e.latlng.lng]],{color:'#e63946',weight:3,dashArray:'6,6'}).addTo(map);});
@@ -694,13 +707,13 @@ function linePopup(A,B){const g=gd(A,B);const d=document.createElement('div');
   return d;}
 function ejectCity(c){applyMove(c,'__none__');map.closePopup();
   document.getElementById('estat').innerHTML='🗑️ أُخرجت <b>'+c+'</b> من مجموعتها (حُذف الرابط)';}
-function excludeCity(n){const old=ptCl[n];
+function excludeCity(n){if(isLocked()){lockToast();map.closePopup();return;}const old=ptCl[n];
   Object.keys(CL).forEach(id=>{CL[id].cities=CL[id].cities.filter(x=>x!==n);});
   Object.keys(CL).forEach(id=>{if(CL[id].cities.length===0)delete CL[id];});
   ptCl[n]=null;if(old&&CL[old])autoRename(old);
   excluded.add(n);map.closePopup();saveState();renderAll();refreshSelectors();
   document.getElementById('estat').innerHTML='🚫 استُبعدت <b>'+n+'</b> من التجميع (تبقى ظاهرة على الخريطة)';}
-function includeCity(n){excluded.delete(n);map.closePopup();saveState();renderAll();
+function includeCity(n){if(isLocked()){lockToast();map.closePopup();return;}excluded.delete(n);map.closePopup();saveState();renderAll();
   document.getElementById('estat').innerHTML='↩️ رجعت <b>'+n+'</b> للتجميع (بدون مجموعة الآن)';}
 function toggleLines(){document.getElementById('lines').checked?map.addLayer(lineLayer):map.removeLayer(lineLayer);}
 
@@ -735,12 +748,13 @@ function renderList(){const cl=document.getElementById('cllist');cl.innerHTML=''
     const rb=document.createElement('button');rb.textContent='✏️';rb.title='إعادة تسمية';
     rb.style.cssText='float:left;width:auto;margin:0 0 0 5px;padding:1px 7px;font-size:11px;background:#6a4aa0;border:0;border-radius:6px;color:#fff;cursor:pointer';
     rb.onclick=e=>{e.stopPropagation();startRename(d,id);};
+    if(isLocked())rb.style.display='none';
     const body=document.createElement('div');
     body.innerHTML='<span class="v" style="background:'+vc+'">'+v+'</span><b>'+id+'</b> — '+c.region+
       '<div class="ct">'+compChip(c.cities)+'<br>أقصى زمن: '+(c.cities.length>1?fmt(st.mx/60):'—')+' · '+c.cities.length+' مدن'+
       (st.nr?' · '+st.nr+' تقديري':'')+'<br>'+c.cities.join('، ')+'</div>';
     d.appendChild(cb);d.appendChild(rb);d.appendChild(body);d.onclick=()=>focusCluster(id);cl.appendChild(d);});}
-function startRename(d,id){d.onclick=null;d.innerHTML='';
+function startRename(d,id){if(isLocked()){lockToast();return;}d.onclick=null;d.innerHTML='';
   const inp=document.createElement('input');inp.type='text';inp.value=id;
   inp.style.cssText='width:68%;padding:5px;border-radius:5px;border:1px solid #2a4a6e;background:#13294a;color:#fff;font-family:Tajawal,sans-serif';
   inp.onclick=e=>e.stopPropagation();
@@ -783,7 +797,8 @@ function renderDiff(){const el=document.getElementById('diffbox');if(!el)return;
     html+='<div style="padding:4px 0;border-bottom:1px solid #1c3a5e"><b>'+icon+' '+label+'</b>'+
       ((fullFrom&&fullTo)?'':'<br><span style="color:#9fb6d0;font-size:11px">'+t.cities.join('، ')+'</span>')+'</div>';});
   el.innerHTML=html;}
-function renderAll(){renderMarkers();renderLines();renderList();renderDiff();renderGroupLabels();}
+function updateLockUI(){const lb=document.getElementById('lockbar');if(lb)lb.style.display=isLocked()?'block':'none';}
+function renderAll(){updateLockUI();renderMarkers();renderLines();renderList();renderDiff();renderGroupLabels();}
 
 // أداة المسافة
 const pa=document.getElementById('pa'),pb=document.getElementById('pb');
@@ -816,7 +831,7 @@ function refreshRcl(){if(!rcl)return;const cur=rcl.value;rcl.innerHTML=Object.ke
   .map(id=>'<option value="'+id+'">'+id+'</option>').join('');if(CL[cur])rcl.value=cur;}
 function refreshSelectors(){refreshCity();refreshTarget();refreshRcl();}
 ec.onchange=function(){const c=ec.value;if(c&&ptCl[c]&&CL[ptCl[c]])et.value=ptCl[c];};
-function renameCluster(){const old=rcl.value,nn=document.getElementById('rname').value.trim();
+function renameCluster(){if(isLocked()){lockToast();return;}const old=rcl.value,nn=document.getElementById('rname').value.trim();
   const st=document.getElementById('estat');
   if(!old){st.innerHTML='اختر مجموعة';return;} if(!nn){st.innerHTML='اكتب الاسم الجديد';return;}
   if(nn===old){document.getElementById('rname').value='';return;}
@@ -829,6 +844,7 @@ function renameCluster(){const old=rcl.value,nn=document.getElementById('rname')
   saveState();renderAll();refreshSelectors();rcl.value=nn;
   document.getElementById('estat').innerHTML='✒️ تغيّر الاسم إلى <b>'+nn+'</b> (محفوظ)';}
 function applyMove(city,tgt){
+  if(isLocked()){lockToast();return ptCl[city];}
   const old=ptCl[city];
   if(tgt!=='__none__')excluded.delete(city);   // الانضمام لمجموعة يلغي الاستبعاد
   Object.keys(CL).forEach(id=>{CL[id].cities=CL[id].cities.filter(x=>x!==city);});
@@ -846,7 +862,7 @@ function moveCity(){const city=ec.value;if(!city){document.getElementById('estat
   const tgt=applyMove(city,et.value);
   document.getElementById('estat').innerHTML='✓ نُقلت <b>'+city+'</b> إلى <b>'+(tgt==='__none__'?'بدون مجموعة':tgt)+'</b> (محفوظ)';}
 // السحب على الخريطة: اربط مدينتين في نفس المجموعة
-function connectDrop(src,t){if(src===t)return;
+function connectDrop(src,t){if(src===t)return;if(isLocked()){lockToast();return;}
   const tc=ptCl[t];let where;
   if(tc){where=applyMove(src,tc);}
   else{const nid=applyMove(src,'__new__');where=applyMove(t,nid);}
@@ -890,6 +906,8 @@ try{ if(new URLSearchParams(location.search).has('embed')){
 
 import datetime
 HTML = HTML.replace("__BUILD__", datetime.datetime.now().strftime("%m-%d %H:%M"))
+HTML = HTML.replace("__NAVCSS__", NAV_CSS)
+HTML = HTML.replace("__NAVBAR__", nav_html("map"))
 HTML = HTML.replace("__DATA__", json.dumps(DATA, ensure_ascii=False))
 open("/home/user/khitba/cluster_analysis/governorates_map.html", "w", encoding="utf-8").write(HTML)
 print("تم حفظ governorates_map.html")
