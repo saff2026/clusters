@@ -300,17 +300,9 @@ __NAVCSS__
    <small>المسافة والزمن بالأعلى <b>حقيقية من قوقل مابس</b> (محسوبة مسبقًا لكل الأزواج). الزر يفتح المسار المباشر للتأكد/الازدحام اللحظي.</small>
   </div>
 
-  <div class="sec">
-   <h3>✏️ تعديل المجموعات</h3>
-   <select id="ecity"></select>
-   <select id="etarget"></select>
-   <button onclick="moveCity()">↪️ نقل المدينة للمجموعة المحددة</button>
-   <div class="res" id="estat">اختر مدينة، ثم مجموعة الوجهة (أو «مجموعة جديدة»)، واضغط نقل. لإعادة تسمية مجموعة استخدم زر ✏️ في قائمة المجموعات بالأسفل.</div>
-   <div class="note">☁️ تعديلاتك تُحفظ تلقائيًا في السحابة وتظهر على أي جهاز يفتح الرابط.</div>
-   <div id="savestat" style="font-size:11px;margin:0 0 6px;min-height:14px"></div>
-   <button class="gmaps" onclick="exportCsv()">⬇️ تصدير التقسيمة المعدّلة (CSV)</button>
-   <button class="gmaps" onclick="exportAll()">⬇️ تنزيل كل المدن في كل الخيارات (CSV)</button>
-   <button id="resetbtn" class="danger" onclick="resetAll()">♻️ استرجاع التقسيمة الأصلية</button>
+  <div style="display:none">
+   <select id="ecity"></select><select id="etarget"></select>
+   <div id="estat"></div><div id="savestat"></div>
   </div>
 
   <div class="sec"><h3>📋 المجموعات — العدد: <span id="clcount">0</span></h3>
