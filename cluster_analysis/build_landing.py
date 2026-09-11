@@ -48,7 +48,6 @@ h1{font-size:26px;font-weight:800;margin:0 0 6px;text-align:center;line-height:1
 <h1>بطولات الواعدين والبراعم — موسم 26/27</h1>
 <div class="sub">اختر الصفحة التي تريد عرضها</div>
 <div class="grid">""" + cards_html + """</div>
-<div class="foot">الاتحاد السعودي لكرة القدم</div>
 </body></html>"""
 
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "landing.html")

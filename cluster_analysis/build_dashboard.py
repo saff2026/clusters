@@ -61,10 +61,6 @@ HTML = r"""<!DOCTYPE html>
  <img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()">
  <h1>📊 لوحة الفِرَق المسجَّلة</h1>
  <span class="muted" id="updated"></span>
- <span class="sp"></span>
- <label class="btn g" style="cursor:pointer">⬆️ تحديث من إكسل<input type="file" id="file" accept=".xlsx,.xls" style="display:none"></label>
- <a class="btn" href="split.html">🧩 تقسيم الفرق على المجموعات</a>
- <a class="btn" href="./">🗺️ الخريطة</a>
 </div>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>

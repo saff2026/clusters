@@ -58,9 +58,6 @@ HTML = r"""<!DOCTYPE html>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()">
  <h1>🧩 تقسيم الفرق على المجموعات</h1>
- <span class="sp"></span>
- <a class="btn" href="dashboard.html">📊 بيانات الفرق</a>
- <a class="btn" href="./">🗺️ الخريطة</a>
 </div>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
