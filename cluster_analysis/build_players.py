@@ -172,6 +172,7 @@ HTML = r"""<!DOCTYPE html>
    <a class="navlink on" href="players.html">عدد اللاعبين</a>
  </nav>
  <div class="tabs" id="ageT"></div>
+ <div style="color:#8fdcb4;font-size:12.5px;margin:2px 0 12px">💡 اختر فئة أو أكثر — تُجمع أرقامها تلقائيًا.</div>
  <div class="kpis" id="kpis"></div>
  <div class="card" id="chartCard" style="display:none;margin-bottom:16px"><h3>تفصيل اللاعبين لكل فئة</h3><div id="chart"></div></div>
  <div class="card"><h3 id="ttl"></h3>
@@ -181,8 +182,14 @@ HTML = r"""<!DOCTYPE html>
 <script>
 const MD=__MDATA__;
 const ALL='جميع الفئات';
-const AGES=[ALL].concat(MD.ages);
-let cur=ALL;
+// اختيار متعدّد للفئات — يبدأ بكل الفئات
+let sel=new Set(MD.ages);
+function selAges(){return MD.ages.filter(a=>sel.has(a));}
+function isAllSel(){return sel.size===MD.ages.length;}
+// تجميع مجموعة على الفئات المختارة (الأرقام مأخوذة من الإكسل، لا تُحسب هنا)
+function aggGroup(x){let p=0,n=0;const per=[];
+  selAges().forEach(a=>{const d=x.teamsByAge[a];if(d){p+=d.p;n+=d.n;per.push(a+': '+nPlayer(d.p)+' في '+nTeam(d.n));}});
+  return {p:p,n:n,per:per};}
 function gp(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
@@ -191,42 +198,11 @@ function nPlayer(n){return arCount(n,'لاعب واحد','لاعبان','لاع�
 function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
 function chartHTML(){
-  const ages=MD.ages,P=MD.perAge;
+  const ages=selAges(),P=MD.perAge;
   const mp=Math.max(1,...ages.map(a=>P[a].p));
   return ages.map(a=>{const d=P[a];return '<div class="crow"><div class="cage">'+a+'</div><div class="cbars">'+
       '<div class="cbar"><div class="cfill p" style="width:'+(100*d.p/mp).toFixed(1)+'%"></div><span class="cval">'+nPlayer(d.p)+'</span></div>'+
       '</div></div>';}).join('');
-}
-let map=null, layer=null;
-try{
-  map=L.map('map',{attributionControl:false,zoomControl:true}).setView([24.2,45.5],5.4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:11,minZoom:4}).addTo(map);
-  layer=L.layerGroup().addTo(map);
-}catch(e){ var _m=document.getElementById('map'); if(_m)_m.style.display='none'; }
-function zoomTo(lat,lon){ if(map&&lat!=null){ map.flyTo([lat,lon],9,{duration:.6}); document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'}); } }
-function marker(x,radius,name,numbers){
-  if(x.lat==null||!layer)return;
-  const cm=L.circleMarker([x.lat,x.lon],{radius:radius,color:'#04150e',weight:1.5,fillColor:'#2fe6b8',fillOpacity:.9})
-   .bindTooltip(name,{permanent:true,direction:'center',className:'gtip'})
-   .bindPopup('<b>'+name+'</b>'+(x.region?' <span style="color:#8fdcb4;font-size:11px;font-weight:600">'+x.region+'</span>':'')+'<br>'+numbers,{className:'gpop',maxWidth:260})
-   .on('click',function(){zoomTo(x.lat,x.lon);});
-  cm.addTo(layer);
-}
-function drawMap(){
-  if(!map||!layer)return; layer.clearLayers();
-  if(cur===ALL){
-    const mx=Math.max(1,...MD.allGroups.map(x=>x.totalPlayers));
-    MD.allGroups.forEach(x=>{
-      const ages=MD.ages.filter(a=>x.teamsByAge[a])
-        .map(a=>{const d=x.teamsByAge[a];return '<div class="ag">'+a+': '+nPlayer(d.p)+'</div>';}).join('');
-      const nums=(ages||'<div class="z">لا لاعبين</div>')+'<div style="color:#ffd166;margin-top:4px">إجمالي اللاعبين: '+nPlayer(x.totalPlayers)+'</div>';
-      marker(x,7+11*(x.totalPlayers/mx),x.group.replace('مجموعة ',''),nums);
-    });
-  } else {
-    const arr=MD.byAge[cur]||[]; const mx=Math.max(1,...arr.map(x=>x.players));
-    arr.forEach(x=>marker(x,7+10*(x.players/mx),x.group.replace('مجموعة ',''),
-      nPlayer(x.players)+' في '+nTeam(x.n)));
-  }
 }
 function regionSections(items,playersOf,teamsOf,rowFn){
   const R={},order=[];
@@ -238,36 +214,31 @@ function regionSections(items,playersOf,teamsOf,rowFn){
   }).join('');
 }
 function render(){
-  document.getElementById('ageT').innerHTML=AGES.map(a=>'<button class="tab'+(a===cur?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
-  document.querySelectorAll('#ageT .tab').forEach(b=>b.onclick=()=>{cur=b.dataset.a;render();});
-  const K=document.getElementById('kpis'), L2=document.getElementById('list');
-  const CC=document.getElementById('chartCard');
-  if(cur===ALL){CC.style.display='block';document.getElementById('chart').innerHTML=chartHTML();}
-  else CC.style.display='none';
-  if(cur===ALL){
-    const g=MD.allGroups, totP=g.reduce((s,x)=>s+x.totalPlayers,0), totT=g.reduce((s,x)=>s+x.totalTeams,0);
-    K.innerHTML='<div class="kpi"><div class="n">'+gp(totT)+'</div><div class="l">مجموع الفِرَق</div></div>'+
-      '<div class="kpi"><div class="n">'+gp(totP)+'</div><div class="l">مجموع اللاعبين</div></div>';
-    document.getElementById('ttl').textContent='المجموعات المكتملة — جميع الفئات';
-    L2.innerHTML=regionSections(g,x=>x.totalPlayers,x=>x.totalTeams,x=>{
-      const ages=MD.ages.filter(a=>x.teamsByAge[a]).map(a=>{const d=x.teamsByAge[a];return a+': '+nPlayer(d.p)+' في '+nTeam(d.n);}).join('<br>');
-      return '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.totalTeams)+' · '+nPlayer(x.totalPlayers)+'</span>'+(x.cities?'<div class="cnames">'+x.cities+'</div>':'')+'<div class="sub">'+ages+'</div></div></div>';});
-  } else {
-    const arr=MD.byAge[cur]||[], totP=arr.reduce((s,x)=>s+x.players,0), totT=arr.reduce((s,x)=>s+x.n,0);
-    K.innerHTML='<div class="kpi"><div class="n">'+gp(totT)+'</div><div class="l">مجموع الفِرَق</div></div>'+
-      '<div class="kpi"><div class="n">'+gp(totP)+'</div><div class="l">مجموع اللاعبين</div></div>';
-    document.getElementById('ttl').textContent='المجموعات المكتملة — '+cur;
-    L2.innerHTML=arr.length?regionSections(arr,x=>x.players,x=>x.n,x=>
-      '<div class="row clk" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nPlayer(x.players)+'</span>'+(x.cities?'<div class="sub">('+x.cities+')</div>':'')+'</div></div>'):'<div class="muted">لا توجد مجموعات مكتملة في هذه الفئة بعد.</div>';
-  }
-  document.querySelectorAll('#list .row.clk').forEach(b=>b.onclick=()=>{
-    const la=parseFloat(b.dataset.lat), lo=parseFloat(b.dataset.lon);
-    if(!isNaN(la))zoomTo(la,lo);
+  const ages=selAges();
+  document.getElementById('ageT').innerHTML=
+    '<button class="tab'+(isAllSel()?' on':'')+'" data-all="1">'+ALL+'</button>'+
+    MD.ages.map(a=>'<button class="tab'+(sel.has(a)?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
+  document.querySelectorAll('#ageT .tab').forEach(b=>b.onclick=()=>{
+    if(b.dataset.all){sel=isAllSel()?new Set():new Set(MD.ages);}
+    else{const a=b.dataset.a;if(sel.has(a))sel.delete(a);else sel.add(a);}
+    render();
   });
-  drawMap();
+  const K=document.getElementById('kpis'), L2=document.getElementById('list'), CC=document.getElementById('chartCard');
+  if(ages.length>=2){CC.style.display='block';document.getElementById('chart').innerHTML=chartHTML();}
+  else CC.style.display='none';
+  if(!ages.length){K.innerHTML='';document.getElementById('ttl').textContent='';
+    L2.innerHTML='<div class="muted">اختر فئة واحدة على الأقل.</div>';return;}
+  const view=[];
+  MD.allGroups.forEach(x=>{const a=aggGroup(x);if(a.n>0)view.push({group:x.group,region:x.region,cities:x.cities,p:a.p,n:a.n,per:a.per});});
+  view.sort((p,q)=>q.p-p.p);
+  const totP=view.reduce((s,x)=>s+x.p,0), totT=view.reduce((s,x)=>s+x.n,0);
+  K.innerHTML='<div class="kpi"><div class="n">'+gp(totT)+'</div><div class="l">مجموع الفِرَق</div></div>'+
+    '<div class="kpi"><div class="n">'+gp(totP)+'</div><div class="l">مجموع اللاعبين</div></div>';
+  document.getElementById('ttl').textContent='المجموعات المكتملة — '+(isAllSel()?ALL:ages.map(a=>a.replace('تحت ','ت')).join('، '));
+  L2.innerHTML=view.length?regionSections(view,x=>x.p,x=>x.n,x=>
+    '<div class="row"><div><b>'+x.group+'</b> <span class="tot">'+nTeam(x.n)+' · '+nPlayer(x.p)+'</span>'+(x.cities?'<div class="cnames">'+x.cities+'</div>':'')+(x.per.length>1?'<div class="sub">'+x.per.join('<br>')+'</div>':'')+'</div></div>'):'<div class="muted">لا توجد مجموعات مكتملة في الفئات المختارة.</div>';
 }
 render();
-setTimeout(()=>{try{map&&map.invalidateSize();}catch(e){}},300);
 </script>
 </body></html>"""
 

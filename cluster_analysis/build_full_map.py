@@ -132,8 +132,6 @@ groups_1114 = [(clusters[cl]["region"], clusters[cl]["cities"]) for cl in ordere
 groups_59 = groups_1114  # تحت 5-9 بنفس تجميع 11-14
 DATASETS = {}
 for _age in ["11-14", "5-9"]:
-    for _i in (1, 2, 3):
-        DATASETS[f"{_age} — خيار {_i}"] = build_dataset(groups_1114)
     DATASETS[f"{_age} — تجربة"] = build_dataset(groups_1114)
 
 # خيار «اكسل»: تجميع رسمي من ملف الإكسل (يُحدَّث عبر update_from_excel.py)
@@ -274,7 +272,7 @@ __NAVCSS__
    <div id="agetabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
    <div class="lab" style="margin-top:10px">خيار التجميع:</div>
    <div id="opttabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-   <div id="lockbar" style="display:none;margin-top:9px;background:#3a2f00;border:1px solid #ffd166;color:#ffd166;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700">🔒 خيار «اكسل» رسمي وغير قابل للتعديل — للتجربة انسخه إلى «خيار 1/2/3».</div>
+   <div id="lockbar" style="display:none;margin-top:9px;background:#3a2f00;border:1px solid #ffd166;color:#ffd166;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700">🔒 خيار «اكسل» رسمي وغير قابل للتعديل — استخدم خيار «تجربة» للتعديل.</div>
    <div id="diffbox" style="margin-top:8px;max-height:160px;overflow-y:auto;font-size:12px"></div>
   </div>
 
@@ -474,7 +472,7 @@ function dsLabel(age){return /^[0-9]/.test(age)?'تحت '+age:age;}
 // خيار «اكسل» رسمي وغير قابل للتعديل
 function isLocked(){return optOf(curKey)==='اكسل';}
 function lockToast(){const el=document.getElementById('estat');
-  if(el)el.innerHTML='🔒 خيار «اكسل» رسمي وغير قابل للتعديل — للتجربة انسخه إلى «خيار 1/2/3».';}
+  if(el)el.innerHTML='🔒 خيار «اكسل» رسمي وغير قابل للتعديل — استخدم خيار «تجربة» للتعديل.';}
 
 // ===== اكتمال المجموعات (يُحسب من أعداد الفرق لكل مدينة/فئة) =====
 let onlyComplete=false;
@@ -508,8 +506,8 @@ function updateDsUI(){
       b.className='dsbtn'+(key===curKey?' on':'');const w=worstClusterSec(clMapOf(key));
       b.innerHTML=optOf(key)+'<br><span style="font-size:10px;font-weight:400;opacity:.9">أسوأ: '+(w?fmt(w/60):'—')+'</span>';
       b.onclick=()=>switchDataset(key);ot.appendChild(b);});}
-  const cf=document.getElementById('copyfirst');if(cf)cf.style.display=(curKey===firstKeyOfAge(ageOf(curKey)))?'none':'block';}
-function copyFromFirst(){const first=firstKeyOfAge(ageOf(curKey));if(curKey===first)return;
+  const cf=document.getElementById('copyfirst');if(cf)cf.style.display=(curKey===firstKeyOfAge(ageOf(curKey))||isLocked())?'none':'block';}
+function copyFromFirst(){if(isLocked()){lockToast();return;}const first=firstKeyOfAge(ageOf(curKey));if(curKey===first)return;
   const base=store[first]||buildLive(first);
   CL={};Object.keys(base.CL).forEach(id=>CL[id]={region:base.CL[id].region,color:base.CL[id].color,
     cities:base.CL[id].cities.slice(),manual:base.CL[id].manual});
