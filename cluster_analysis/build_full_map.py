@@ -273,7 +273,6 @@ __NAVCSS__
    <div class="lab" style="margin-top:10px">خيار التجميع:</div>
    <div id="opttabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
    <div id="lockbar" style="display:none;margin-top:9px;background:#3a2f00;border:1px solid #ffd166;color:#ffd166;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700">🔒 خيار «اكسل» رسمي وغير قابل للتعديل — استخدم خيار «تجربة» للتعديل.</div>
-   <div id="diffbox" style="margin-top:8px;max-height:160px;overflow-y:auto;font-size:12px"></div>
   </div>
 
   <div class="sec">
