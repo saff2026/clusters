@@ -24,6 +24,8 @@
 .roster{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
 .rteam{background:#0d3f2d;border:1px solid #1c6b49;border-radius:8px;padding:5px 10px;font-size:12.5px}
 .rteam b{color:#ffd166;margin-left:5px}
+.rteam.pick{cursor:pointer} .rteam.pick:hover{background:#11523a}
+.rteam.pick.on{background:#ffd166;color:#04150e;border-color:#ffd166} .rteam.pick.on b{color:#0a3b23}
 h3.sec{color:#ffd166;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #14543a;padding-bottom:5px}
 .dayttl{color:#8fdcb4;font-weight:800;font-size:14px;margin:14px 0 6px}
 table{border-collapse:collapse;width:100%;font-size:12.5px;margin-bottom:6px}
@@ -54,6 +56,7 @@ function gp(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function arCount(n,one,two,few,many){const m=n%100;if(n===1)return one;if(n===2)return two;
   if(m>=3&&m<=10)return gp(n)+' '+few;return gp(n)+' '+many;}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
+function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 // استبدال «س ضد ص» بأسماء الفرق
 function cellHTML(cell,teams){
@@ -86,6 +89,25 @@ document.getElementById('cards').innerHTML=D.settings.map(s=>
 let tab='groups';
 const TABS=[['groups','المجموعات'],['tmpl','قوالب الجداول'],['summary','ملخص البطولات']];
 let curG=D.groups.length?0:-1, curT=Object.keys(D.templates).map(Number).sort((a,b)=>a-b)[0];
+let curTeam=null; // فهرس الفريق المختار داخل المجموعة (null = الجدول الكامل)
+// مباريات فريق واحد داخل قالب المجموعة
+function teamMatches(t,teams,idx){
+  const num=idx+1, out=[];
+  t.days.forEach(day=>day.slots.forEach(s=>s.cells.forEach((c,ci)=>{
+    const m=c&&c.match(/^(\d+)\s*ضد\s*(\d+)$/); if(!m)return;
+    const a=+m[1], b=+m[2];
+    if(a===num||b===num){const opp=a===num?b:a;
+      out.push({day:day.day,time:s.time,pitch:t.pitches[ci],opp:teams[opp-1]||('#'+opp)});}
+  })));
+  return out;
+}
+function teamMatchesHTML(t,teams,idx){
+  const rows=teamMatches(t,teams,idx);
+  let h='<div class="stbl"><table><tr><th>اليوم</th><th>الوقت</th><th>الملعب</th><th>الخصم</th></tr>';
+  rows.forEach(r=>{h+='<tr><td>'+esc(r.day)+'</td><td class="time">'+esc(r.time)+'</td><td>'+esc(r.pitch)+'</td><td class="mtch"><b>'+esc(r.opp)+'</b></td></tr>';});
+  h+='</table></div>';
+  return {html:h,count:rows.length};
+}
 function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>
   '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
   document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
@@ -97,9 +119,23 @@ function groupsPanel(){
   h+='</div>';
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
-    h+='<div class="roster">'+g.teams.map((t,i)=>'<span class="rteam"><b>'+(i+1)+'</b>'+esc(t)+'</span>').join('')+'</div>';
-    if(g.tmpl){h+=renderTemplate(D.templates[String(g.tmpl)],g.teams);}
-    else{h+='<div class="note">لا يوجد قالب جدول جاهز لعدد '+nTeam(g.size)+' في ملف الجداول بعد — عُرضت قائمة الفرق فقط.</div>';}
+    if(g.tmpl){
+      h+='<div class="hint">اختر فريقًا لعرض مبارياته فقط، أو «الجدول الكامل» للكل:</div>';
+      h+='<div class="roster">';
+      h+='<span class="rteam pick'+(curTeam===null?' on':'')+'" data-t="-1">📋 الجدول الكامل</span>';
+      h+=g.teams.map((t,i)=>'<span class="rteam pick'+(curTeam===i?' on':'')+'" data-t="'+i+'"><b>'+(i+1)+'</b>'+esc(t)+'</span>').join('');
+      h+='</div>';
+      const tmpl=D.templates[String(g.tmpl)];
+      if(curTeam!==null){
+        const r=teamMatchesHTML(tmpl,g.teams,curTeam);
+        h+='<h3 class="sec">مباريات '+esc(g.teams[curTeam])+' — '+nMatch(r.count)+'</h3>'+r.html;
+      }else{
+        h+=renderTemplate(tmpl,g.teams);
+      }
+    }else{
+      h+='<div class="roster">'+g.teams.map((t,i)=>'<span class="rteam"><b>'+(i+1)+'</b>'+esc(t)+'</span>').join('')+'</div>';
+      h+='<div class="note">لا يوجد قالب جدول جاهز لعدد '+nTeam(g.size)+' في ملف الجداول بعد — عُرضت قائمة الفرق فقط.</div>';
+    }
   }
   return h;
 }
@@ -123,7 +159,10 @@ function render(){
   renderTabs();
   const p=document.getElementById('panel');
   p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
-  if(tab==='groups')p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curG=+b.dataset.i;render();window.scrollTo(0,0);});
+  if(tab==='groups'){
+    p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curG=+b.dataset.i;curTeam=null;render();window.scrollTo(0,0);});
+    p.querySelectorAll('.rteam.pick').forEach(b=>b.onclick=()=>{const t=+b.dataset.t;curTeam=(t<0?null:t);render();});
+  }
   if(tab==='tmpl')p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curT=+b.dataset.s;render();window.scrollTo(0,0);});
 }
 render();
