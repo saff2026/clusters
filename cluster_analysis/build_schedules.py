@@ -65,6 +65,12 @@ def parse_template(ws):
             slots.append({"time": time, "cells": cells})
     if cur is not None:
         days.append({"day": cur, "slots": slots})
+    # إزالة صفوف الاستراحة/الفارغة من نهاية كل يوم (لا معنى لاستراحة في الآخر)
+    def has_match(cells):
+        return any(re.match(r"^\d+\s*ضد\s*\d+$", S(c)) for c in cells)
+    for d in days:
+        while d["slots"] and not has_match(d["slots"][-1]["cells"]):
+            d["slots"].pop()
     days = [d for d in days if d["slots"]]
     return {"title": title, "pitches": pitches, "days": days}
 
@@ -211,7 +217,7 @@ function groupsPanel(){
   const g=D.groups[curG];
   let h='<div class="hint">💡 اختر مجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div>';
   h+='<select id="gsel" class="sel">'+D.groups.map((x,i)=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
-    esc(x.group)+' — '+nTeam(x.size)+(x.tmpl?' · ✓ جدول':' · بلا قالب')+'</option>').join('')+'</select>';
+    esc(x.group)+' — '+nTeam(x.size)+'</option>').join('')+'</select>';
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
     if(g.tmpl){
