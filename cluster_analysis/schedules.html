@@ -30,6 +30,7 @@
 .rteam.pick.on{background:#ffd166;color:#04150e;border-color:#ffd166} .rteam.pick.on b{color:#0a3b23}
 h3.sec{color:#ffd166;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #14543a;padding-bottom:5px}
 .dayttl{color:#8fdcb4;font-weight:800;font-size:14px;margin:14px 0 6px}
+.subttl{color:#ffd166;font-weight:800;font-size:14px;margin:12px 0 4px}
 table{border-collapse:collapse;width:100%;font-size:12.5px;margin-bottom:6px}
 th,td{border:1px solid #14543a;padding:6px 8px;text-align:center}
 th{background:#0d4b32;color:#eafff3;font-weight:700} td{background:#0a2418}
@@ -60,6 +61,11 @@ function arCount(n,one,two,few,many){const m=n%100;if(n===1)return one;if(n===2)
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
 function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function dayNum(d){return String(d).replace(/^\s*اليوم\s*/,'');}
+function parseSubgroups(title){const subs=[];['أ','ب','ج','د'].forEach(l=>{
+  const m=title.match(new RegExp(l+'\\s*:\\s*(\\d+)\\s*[-\\u2013]\\s*(\\d+)'));
+  if(m)subs.push({label:l,from:+m[1],to:+m[2]});});return subs;}
+function subLabelOf(subs,num){for(const s of subs){if(num>=s.from&&num<=s.to)return s.label;}return '';}
 // استبدال «س ضد ص» بأسماء الفرق
 function cellHTML(cell,teams){
   const m=cell.match(/^(\d+)\s*ضد\s*(\d+)$/);
@@ -73,7 +79,7 @@ function renderTemplate(t,teams){
   if(!t)return '';
   let h='';
   t.days.forEach(day=>{
-    h+='<div class="dayttl">'+esc(day.day)+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
+    h+='<div class="dayttl">'+esc(dayNum(day.day))+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
       t.pitches.map(p=>'<th>'+esc(p)+'</th>').join('')+'</tr>';
     day.slots.forEach(s=>{
       if(isRestRow(s)){h+='<tr><td class="time">'+esc(s.time)+'</td><td class="rest" colspan="'+t.pitches.length+'">استراحة</td></tr>';return;}
@@ -106,7 +112,7 @@ function teamMatches(t,teams,idx){
 function teamMatchesHTML(t,teams,idx){
   const rows=teamMatches(t,teams,idx);
   let h='<div class="stbl"><table><tr><th>اليوم</th><th>الوقت</th><th>الملعب</th><th>الخصم</th></tr>';
-  rows.forEach(r=>{h+='<tr><td>'+esc(r.day)+'</td><td class="time">'+esc(r.time)+'</td><td>'+esc(r.pitch)+'</td><td class="mtch"><b>'+esc(r.opp)+'</b></td></tr>';});
+  rows.forEach(r=>{h+='<tr><td>'+esc(dayNum(r.day))+'</td><td class="time">'+esc(r.time)+'</td><td>'+esc(r.pitch)+'</td><td class="mtch"><b>'+esc(r.opp)+'</b></td></tr>';});
   h+='</table></div>';
   return {html:h,count:rows.length};
 }
@@ -121,13 +127,19 @@ function groupsPanel(){
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
     if(g.tmpl){
+      const tmpl=D.templates[String(g.tmpl)];
+      const subs=parseSubgroups(tmpl.title);
+      if(subs.length>1){
+        h+='<div class="hint">هذه المجموعة مقسّمة إلى '+subs.length+' مجموعات فرعية، تلعب كل واحدة على ملاعبها:</div>';
+        subs.forEach(sg=>{h+='<div class="subttl">المجموعة '+sg.label+'</div><div class="roster">'+
+          g.teams.slice(sg.from-1,sg.to).map((t,i)=>'<span class="rteam"><b>'+(sg.from+i)+'</b>'+esc(t)+'</span>').join('')+'</div>';});
+      }
       h+='<div class="hint">اختر فريقًا لعرض مبارياته فقط، أو «الجدول الكامل» للكل:</div>';
       h+='<select id="tsel" class="sel"><option value="-1"'+(curTeam===null?' selected':'')+'>📋 الجدول الكامل</option>'+
-        g.teams.map((t,i)=>'<option value="'+i+'"'+(curTeam===i?' selected':'')+'>'+(i+1)+' — '+esc(t)+'</option>').join('')+'</select>';
-      const tmpl=D.templates[String(g.tmpl)];
+        g.teams.map((t,i)=>{const sl=subLabelOf(subs,i+1);return '<option value="'+i+'"'+(curTeam===i?' selected':'')+'>'+(i+1)+' — '+esc(t)+(sl?' (المجموعة '+sl+')':'')+'</option>';}).join('')+'</select>';
       if(curTeam!==null){
-        const r=teamMatchesHTML(tmpl,g.teams,curTeam);
-        h+='<h3 class="sec">مباريات '+esc(g.teams[curTeam])+' — '+nMatch(r.count)+'</h3>'+r.html;
+        const r=teamMatchesHTML(tmpl,g.teams,curTeam);const sl=subLabelOf(subs,curTeam+1);
+        h+='<h3 class="sec">مباريات '+esc(g.teams[curTeam])+(sl?' (المجموعة '+sl+')':'')+' — '+nMatch(r.count)+'</h3>'+r.html;
       }else{
         h+=renderTemplate(tmpl,g.teams);
       }
@@ -143,7 +155,10 @@ function tmplPanel(){
   let h='<div class="hint">💡 قوالب الجداول حسب عدد الفرق (بالأرقام). تُطبَّق على أي مجموعة بنفس العدد.</div>';
   h+='<select id="tmsel" class="sel">'+sizes.map(s=>'<option value="'+s+'"'+(s===curT?' selected':'')+'>'+nTeam(s)+'</option>').join('')+'</select>';
   const t=D.templates[String(curT)];
-  if(t){h+='<h3 class="sec">'+esc(t.title)+'</h3>'+renderTemplate(t,null);}
+  if(t){const subs=parseSubgroups(t.title);
+    h+='<h3 class="sec">'+esc(t.title)+'</h3>';
+    if(subs.length>1)h+='<div class="hint">أرقام '+subs.map(s=>'المجموعة '+s.label+': '+s.from+'–'+s.to).join(' · ')+'</div>';
+    h+=renderTemplate(t,null);}
   return h;
 }
 function summaryPanel(){
