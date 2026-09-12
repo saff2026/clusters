@@ -130,15 +130,24 @@ function teamMatchesHTML(t,teams,idx){
   h+='</table></div>';return {html:h,count:rows.length};
 }
 // ===== الحالة =====
-let curAge=0, tab='groups', curG=0, curT=0, curTeam=null;
+let curAge=-1, tab='groups', curG=0, curT=0, curTeam=null;
 function A(){return D.ages[curAge];}
 function resetAge(){curG=0;curTeam=null;tab='groups';
   const sz=Object.keys(A().templates).map(Number).sort((a,b)=>a-b);curT=sz.length?sz[0]:0;}
-function renderAgebar(){document.getElementById('agebar').innerHTML=D.ages.map((a,i)=>
-  '<button class="agebtn'+(i===curAge?' on':'')+'" data-i="'+i+'">'+esc(a.label)+'</button>').join('');
-  document.querySelectorAll('#agebar .agebtn').forEach(b=>b.onclick=()=>{curAge=+b.dataset.i;resetAge();render();});}
-function renderCards(){document.getElementById('cards').innerHTML=A().settings.map(s=>
-  '<div class="card"><div class="l">'+esc(s[0])+'</div><div class="v">'+esc(s[1])+'</div></div>').join('');}
+function renderAgebar(){
+  let h='<button class="agebtn'+(curAge===-1?' on':'')+'" data-i="-1">📋 ملخص الكل</button>';
+  h+=D.ages.map((a,i)=>'<button class="agebtn'+(i===curAge?' on':'')+'" data-i="'+i+'">'+esc(a.label)+'</button>').join('');
+  document.getElementById('agebar').innerHTML=h;
+  document.querySelectorAll('#agebar .agebtn').forEach(b=>b.onclick=()=>{curAge=+b.dataset.i;if(curAge>=0)resetAge();render();window.scrollTo(0,0);});}
+function overviewPanel(){
+  let h='<div class="hint">📋 ملخص البطولات لكل الفئات — اضغط اسم الفئة بالأعلى للدخول في تفاصيلها.</div>';
+  D.ages.forEach(a=>{const s=a.summary;
+    h+='<h3 class="sec">'+esc(a.label)+'</h3>';
+    if(!s.headers.length){h+='<div class="muted">لا يوجد ملخص.</div>';return;}
+    h+='<div class="stbl"><table><tr>'+s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>';
+    s.rows.forEach(r=>{h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+'</tr>';});
+    h+='</table></div>';});
+  return h;}
 const TABS=[['groups','المجموعات'],['tmpl','قوالب الجداول'],['summary','ملخص البطولات']];
 function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>
   '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
@@ -189,8 +198,10 @@ function summaryPanel(){
   h+='</table></div>';return h;
 }
 function render(){
-  renderAgebar();renderTabs();
+  renderAgebar();
   const p=document.getElementById('panel');
+  if(curAge===-1){document.getElementById('tabs').innerHTML='';p.innerHTML=overviewPanel();return;}
+  renderTabs();
   p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
   if(tab==='groups'){
     const gs=document.getElementById('gsel');if(gs)gs.onchange=()=>{curG=+gs.value;curTeam=null;render();window.scrollTo(0,0);};
@@ -198,7 +209,7 @@ function render(){
   }
   if(tab==='tmpl'){const ms=document.getElementById('tmsel');if(ms)ms.onchange=()=>{curT=+ms.value;render();window.scrollTo(0,0);};}
 }
-resetAge();render();
+render();
 </script>
 </body></html>"""
 
