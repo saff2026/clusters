@@ -112,6 +112,8 @@ HTML = r"""<!DOCTYPE html>
 .tab{background:#0d4b32;border:1px solid #1c7a52;color:#eafff3;border-radius:20px;padding:8px 18px;cursor:pointer;font-family:'Tajawal';font-size:14px;font-weight:700}
 .tab.on{background:#ffd166;color:#04150e;border-color:#ffd166}
 .panel{background:#0b2c1f;border:1px solid #14543a;border-radius:14px;padding:14px}
+.sel{background:#0d3f2d;color:#eafff3;border:1px solid #1c6b49;border-radius:10px;padding:10px 14px;font-family:'Tajawal';font-weight:700;font-size:14px;min-width:min(300px,100%);max-width:100%;margin-bottom:12px;cursor:pointer}
+.sel option{background:#0b2c1f;color:#eafff3}
 .glist{display:flex;flex-wrap:wrap;gap:8px}
 .gbtn{background:#0d3f2d;border:1px solid #1c6b49;border-radius:10px;padding:9px 13px;cursor:pointer;color:#eafff3;font-family:'Tajawal';font-weight:700;font-size:13px;text-align:right}
 .gbtn:hover{background:#11523a} .gbtn.on{background:#ffd166;color:#04150e;border-color:#ffd166}
@@ -207,18 +209,15 @@ function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])
   document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
 function groupsPanel(){
   const g=D.groups[curG];
-  let h='<div class="hint">💡 اختر مجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div><div class="glist">';
-  h+=D.groups.map((x,i)=>'<button class="gbtn'+(i===curG?' on':'')+'" data-i="'+i+'">'+esc(x.group)+
-    '<span class="c">'+nTeam(x.size)+(x.tmpl?' · ✓ جدول':' · — بلا قالب')+'</span></button>').join('');
-  h+='</div>';
+  let h='<div class="hint">💡 اختر مجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div>';
+  h+='<select id="gsel" class="sel">'+D.groups.map((x,i)=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
+    esc(x.group)+' — '+nTeam(x.size)+(x.tmpl?' · ✓ جدول':' · بلا قالب')+'</option>').join('')+'</select>';
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
     if(g.tmpl){
       h+='<div class="hint">اختر فريقًا لعرض مبارياته فقط، أو «الجدول الكامل» للكل:</div>';
-      h+='<div class="roster">';
-      h+='<span class="rteam pick'+(curTeam===null?' on':'')+'" data-t="-1">📋 الجدول الكامل</span>';
-      h+=g.teams.map((t,i)=>'<span class="rteam pick'+(curTeam===i?' on':'')+'" data-t="'+i+'"><b>'+(i+1)+'</b>'+esc(t)+'</span>').join('');
-      h+='</div>';
+      h+='<select id="tsel" class="sel"><option value="-1"'+(curTeam===null?' selected':'')+'>📋 الجدول الكامل</option>'+
+        g.teams.map((t,i)=>'<option value="'+i+'"'+(curTeam===i?' selected':'')+'>'+(i+1)+' — '+esc(t)+'</option>').join('')+'</select>';
       const tmpl=D.templates[String(g.tmpl)];
       if(curTeam!==null){
         const r=teamMatchesHTML(tmpl,g.teams,curTeam);
@@ -235,9 +234,8 @@ function groupsPanel(){
 }
 function tmplPanel(){
   const sizes=Object.keys(D.templates).map(Number).sort((a,b)=>a-b);
-  let h='<div class="hint">💡 قوالب الجداول حسب عدد الفرق (بالأرقام). تُطبَّق على أي مجموعة بنفس العدد.</div><div class="glist">';
-  h+=sizes.map(s=>'<button class="gbtn'+(s===curT?' on':'')+'" data-s="'+s+'">'+nTeam(s)+'</button>').join('');
-  h+='</div>';
+  let h='<div class="hint">💡 قوالب الجداول حسب عدد الفرق (بالأرقام). تُطبَّق على أي مجموعة بنفس العدد.</div>';
+  h+='<select id="tmsel" class="sel">'+sizes.map(s=>'<option value="'+s+'"'+(s===curT?' selected':'')+'>'+nTeam(s)+'</option>').join('')+'</select>';
   const t=D.templates[String(curT)];
   if(t){h+='<h3 class="sec">'+esc(t.title)+'</h3>'+renderTemplate(t,null);}
   return h;
@@ -254,10 +252,10 @@ function render(){
   const p=document.getElementById('panel');
   p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
   if(tab==='groups'){
-    p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curG=+b.dataset.i;curTeam=null;render();window.scrollTo(0,0);});
-    p.querySelectorAll('.rteam.pick').forEach(b=>b.onclick=()=>{const t=+b.dataset.t;curTeam=(t<0?null:t);render();});
+    const gs=document.getElementById('gsel');if(gs)gs.onchange=()=>{curG=+gs.value;curTeam=null;render();window.scrollTo(0,0);};
+    const ts=document.getElementById('tsel');if(ts)ts.onchange=()=>{const v=+ts.value;curTeam=(v<0?null:v);render();};
   }
-  if(tab==='tmpl')p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curT=+b.dataset.s;render();window.scrollTo(0,0);});
+  if(tab==='tmpl'){const ms=document.getElementById('tmsel');if(ms)ms.onchange=()=>{curT=+ms.value;render();window.scrollTo(0,0);};}
 }
 render();
 </script>
