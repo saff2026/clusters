@@ -9,6 +9,7 @@ NAV_ITEMS = [
     ("dashboard", "📊 لوحة الفرق",        "dashboard.html"),
     ("split",     "🧩 التقسيم",           "split.html"),
     ("mp",        "⚽ المباريات واللاعبون", "matches.html"),
+    ("schedules", "🗓️ الجداول",           "schedules.html"),
 ]
 
 NAV_CSS = (

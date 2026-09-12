@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""يبني صفحة «الجداول» (schedules.html):
+- ملخص البطولات + قوالب الجداول حسب عدد الفرق (من ملف الجداول)
+- مجموعات تحت 5 الفعلية بأسماء فرقها؛ ومن حجمه قالب يُعرض جدوله بالأسماء.
+المدخلات: schedules_u5.xlsx (القوالب) + schedule_groups_u5.json (المجموعات→الفرق)."""
+import json, os, re
+import openpyxl
+
+BASE = os.path.dirname(os.path.abspath(__file__)) + "/"
+XLSX = BASE + "schedules_u5.xlsx"
+GROUPS = BASE + "schedule_groups_u5.json"
+
+wb = openpyxl.load_workbook(XLSX, read_only=True, data_only=True)
+
+def S(c):
+    return "" if c is None else str(c).strip()
+
+# ---- الإعدادات (المدخلات) ----
+settings = []
+if "المدخلات" in wb.sheetnames:
+    for r in wb["المدخلات"].iter_rows(values_only=True):
+        k, v = S(r[0]), (S(r[1]) if len(r) > 1 else "")
+        if k and v and k not in ("المدخلات", "البند"):
+            settings.append([k, v])
+
+# ---- ملخص البطولات ----
+summary = {"headers": [], "rows": []}
+if "ملخص البطولات" in wb.sheetnames:
+    ws = wb["ملخص البطولات"]
+    rows = [[S(c) for c in r] for r in ws.iter_rows(values_only=True)]
+    hi = next((i for i, r in enumerate(rows) if r and r[0] == "عدد الفرق"), None)
+    if hi is not None:
+        summary["headers"] = [c for c in rows[hi] if c]
+        ncol = len(summary["headers"])
+        for r in rows[hi + 1:]:
+            if not r or not r[0]:
+                break
+            if not re.match(r"^\d", r[0]):
+                break
+            summary["rows"].append(r[:ncol])
+
+# ---- قوالب الجداول حسب عدد الفرق ----
+def parse_template(ws):
+    rows = [[S(c) for c in r] for r in ws.iter_rows(values_only=True)]
+    title = rows[0][0] if rows and rows[0] else ""
+    hi = next((i for i, r in enumerate(rows)
+               if len(r) > 1 and r[0] == "اليوم" and r[1].startswith("الوقت")), None)
+    if hi is None:
+        return None
+    hdr = rows[hi]
+    pitch_idx = [j for j, c in enumerate(hdr) if c.startswith("ملعب")]
+    pitches = [hdr[j] for j in pitch_idx]
+    days, cur, slots = [], None, None
+    for r in rows[hi + 1:]:
+        day, time = (r[0] if r else ""), (r[1] if len(r) > 1 else "")
+        if day.startswith("اليوم"):
+            if cur is not None:
+                days.append({"day": cur, "slots": slots})
+            cur, slots = day, []
+        # صف فترة: فيه وقت يحوي رقمًا
+        if time and re.search(r"\d", time) and cur is not None:
+            cells = [r[j] if j < len(r) else "" for j in pitch_idx]
+            slots.append({"time": time, "cells": cells})
+    if cur is not None:
+        days.append({"day": cur, "slots": slots})
+    return {"title": title, "pitches": pitches, "days": days}
+
+templates = {}
+for sn in wb.sheetnames:
+    m = re.match(r"^(\d+)\s*(?:فرق|فريقًا)(?:\s*\(\d+\))?$", sn)
+    if not m:
+        continue
+    size = int(m.group(1))
+    if size in templates:        # تجاهل النسخ المكررة مثل «6 فرق (2)»
+        continue
+    t = parse_template(wb[sn])
+    if t:
+        templates[size] = t
+
+# ---- المجموعات الفعلية ----
+G = json.load(open(GROUPS, encoding="utf-8"))
+avail = set(templates.keys())
+groups = []
+for g in G["groups"]:
+    teams = [t["name"] for t in g["teams"]]
+    size = len(teams)
+    groups.append({"group": g["group"], "region": g.get("region", ""),
+                   "teams": teams, "size": size,
+                   "tmpl": size if size in avail else None})
+
+DATA = {"age": G.get("age", "تحت 5"), "settings": settings, "summary": summary,
+        "templates": {str(k): v for k, v in templates.items()}, "groups": groups}
+
+HTML = r"""<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>جداول البطولات — __AGE__</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#eafff3}
+.top{background:#006C35;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.top img.logo{height:46px}
+.top h1{font-size:19px;margin:0;font-weight:800}
+.wrap{max-width:1080px;margin:0 auto;padding:16px}
+.cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.card{background:#0d3f2d;border:1px solid #1c6b49;border-radius:12px;padding:12px 16px;flex:1;min-width:150px}
+.card .l{color:#8fdcb4;font-size:12px} .card .v{font-size:18px;font-weight:800;margin-top:3px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tab{background:#0d4b32;border:1px solid #1c7a52;color:#eafff3;border-radius:20px;padding:8px 18px;cursor:pointer;font-family:'Tajawal';font-size:14px;font-weight:700}
+.tab.on{background:#ffd166;color:#04150e;border-color:#ffd166}
+.panel{background:#0b2c1f;border:1px solid #14543a;border-radius:14px;padding:14px}
+.glist{display:flex;flex-wrap:wrap;gap:8px}
+.gbtn{background:#0d3f2d;border:1px solid #1c6b49;border-radius:10px;padding:9px 13px;cursor:pointer;color:#eafff3;font-family:'Tajawal';font-weight:700;font-size:13px;text-align:right}
+.gbtn:hover{background:#11523a} .gbtn.on{background:#ffd166;color:#04150e;border-color:#ffd166}
+.gbtn .c{font-size:11px;font-weight:500;color:#9fdca0;display:block;margin-top:2px}
+.gbtn.on .c{color:#0a3b23}
+.roster{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+.rteam{background:#0d3f2d;border:1px solid #1c6b49;border-radius:8px;padding:5px 10px;font-size:12.5px}
+.rteam b{color:#ffd166;margin-left:5px}
+h3.sec{color:#ffd166;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #14543a;padding-bottom:5px}
+.dayttl{color:#8fdcb4;font-weight:800;font-size:14px;margin:14px 0 6px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;margin-bottom:6px}
+th,td{border:1px solid #14543a;padding:6px 8px;text-align:center}
+th{background:#0d4b32;color:#eafff3;font-weight:700} td{background:#0a2418}
+td.time{background:#0d3f2d;color:#ffd166;font-weight:700;white-space:nowrap}
+td.rest{color:#6f9a86;font-style:italic;background:#08190f}
+.mtch b{color:#bfe9d4}
+.note{color:#ffcf8a;background:#3a2f00;border:1px solid #ffd16655;border-radius:8px;padding:8px 11px;font-size:12.5px;margin-top:8px}
+.muted{color:#8fdcb4;font-size:13px}
+.stbl{overflow-x:auto}
+.hint{color:#8fdcb4;font-size:12.5px;margin:2px 0 12px}
+</style></head><body>
+<div class="top">
+ <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
+ <h1>🗓️ جداول البطولات — __AGE__</h1>
+</div>
+<div class="wrap">
+ <div class="cards" id="cards"></div>
+ <div class="tabs" id="tabs"></div>
+ <div class="panel" id="panel"></div>
+</div>
+<script>
+const D=__DATA__;
+function gp(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function arCount(n,one,two,few,many){const m=n%100;if(n===1)return one;if(n===2)return two;
+  if(m>=3&&m<=10)return gp(n)+' '+few;return gp(n)+' '+many;}
+function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+// استبدال «س ضد ص» بأسماء الفرق
+function cellHTML(cell,teams){
+  const m=cell.match(/^(\d+)\s*ضد\s*(\d+)$/);
+  if(m&&teams){const a=teams[+m[1]-1]||('#'+m[1]), b=teams[+m[2]-1]||('#'+m[2]);
+    return '<span class="mtch"><b>'+esc(a)+'</b> ضد <b>'+esc(b)+'</b></span>';}
+  if(/^استراحة/.test(cell))return '<span class="rest-in">—</span>';
+  return esc(cell);
+}
+function isRestRow(s){return s.cells.every(c=>c===''||/^استراحة/.test(c));}
+function renderTemplate(t,teams){
+  if(!t)return '';
+  let h='';
+  t.days.forEach(day=>{
+    h+='<div class="dayttl">'+esc(day.day)+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
+      t.pitches.map(p=>'<th>'+esc(p)+'</th>').join('')+'</tr>';
+    day.slots.forEach(s=>{
+      if(isRestRow(s)){h+='<tr><td class="time">'+esc(s.time)+'</td><td class="rest" colspan="'+t.pitches.length+'">استراحة</td></tr>';return;}
+      h+='<tr><td class="time">'+esc(s.time)+'</td>'+
+        s.cells.map(c=>'<td>'+(c?cellHTML(c,teams):'')+'</td>').join('')+'</tr>';
+    });
+    h+='</table></div>';
+  });
+  return h;
+}
+// بطاقات الإعدادات
+document.getElementById('cards').innerHTML=D.settings.map(s=>
+  '<div class="card"><div class="l">'+esc(s[0])+'</div><div class="v">'+esc(s[1])+'</div></div>').join('');
+// التبويبات
+let tab='groups';
+const TABS=[['groups','المجموعات'],['tmpl','قوالب الجداول'],['summary','ملخص البطولات']];
+let curG=D.groups.length?0:-1, curT=Object.keys(D.templates).map(Number).sort((a,b)=>a-b)[0];
+function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>
+  '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
+  document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
+function groupsPanel(){
+  const g=D.groups[curG];
+  let h='<div class="hint">💡 اختر مجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div><div class="glist">';
+  h+=D.groups.map((x,i)=>'<button class="gbtn'+(i===curG?' on':'')+'" data-i="'+i+'">'+esc(x.group)+
+    '<span class="c">'+nTeam(x.size)+(x.tmpl?' · ✓ جدول':' · — بلا قالب')+'</span></button>').join('');
+  h+='</div>';
+  if(g){
+    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
+    h+='<div class="roster">'+g.teams.map((t,i)=>'<span class="rteam"><b>'+(i+1)+'</b>'+esc(t)+'</span>').join('')+'</div>';
+    if(g.tmpl){h+=renderTemplate(D.templates[String(g.tmpl)],g.teams);}
+    else{h+='<div class="note">لا يوجد قالب جدول جاهز لعدد '+nTeam(g.size)+' في ملف الجداول بعد — عُرضت قائمة الفرق فقط.</div>';}
+  }
+  return h;
+}
+function tmplPanel(){
+  const sizes=Object.keys(D.templates).map(Number).sort((a,b)=>a-b);
+  let h='<div class="hint">💡 قوالب الجداول حسب عدد الفرق (بالأرقام). تُطبَّق على أي مجموعة بنفس العدد.</div><div class="glist">';
+  h+=sizes.map(s=>'<button class="gbtn'+(s===curT?' on':'')+'" data-s="'+s+'">'+nTeam(s)+'</button>').join('');
+  h+='</div>';
+  const t=D.templates[String(curT)];
+  if(t){h+='<h3 class="sec">'+esc(t.title)+'</h3>'+renderTemplate(t,null);}
+  return h;
+}
+function summaryPanel(){
+  const s=D.summary;if(!s.headers.length)return '<div class="muted">لا يوجد ملخص.</div>';
+  let h='<h3 class="sec">ملخص جداول المجموعات</h3><div class="stbl"><table><tr>'+
+    s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>';
+  s.rows.forEach(r=>{h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+'</tr>';});
+  h+='</table></div>';return h;
+}
+function render(){
+  renderTabs();
+  const p=document.getElementById('panel');
+  p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
+  if(tab==='groups')p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curG=+b.dataset.i;render();window.scrollTo(0,0);});
+  if(tab==='tmpl')p.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{curT=+b.dataset.s;render();window.scrollTo(0,0);});
+}
+render();
+</script>
+</body></html>"""
+
+HTML = HTML.replace("__AGE__", DATA["age"]).replace("__DATA__", json.dumps(DATA, ensure_ascii=False))
+open(BASE + "schedules.html", "w", encoding="utf-8").write(HTML)
+print("saved schedules.html", len(HTML), "bytes | قوالب:", sorted(templates.keys()),
+      "| مجموعات:", len(groups), "لها قالب:", sum(1 for g in groups if g["tmpl"]))
