@@ -146,6 +146,21 @@ for sn in wb.sheetnames:
 
 src = {"settings": settings, "summary": summary,
        "templates": {str(k): v for k, v in templates.items()}}
+
+# ---- المبادئ (اختياري) ----
+principles = []
+if "المبادئ" in wb.sheetnames:
+    rows = [[S(c) for c in r] for r in wb["المبادئ"].iter_rows(values_only=True)]
+    hi = next((i for i, r in enumerate(rows) if r and r[0] == "#" and len(r) > 1 and r[1] == "المبدأ"), None)
+    if hi is not None:
+        for r in rows[hi + 1:]:
+            p = r[1] if len(r) > 1 else ""
+            if not p:
+                continue
+            principles.append({"p": p, "e": r[2] if len(r) > 2 else ""})
+src["principles"] = principles
+
 json.dump(src, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
 print("saved", os.path.basename(OUT), "| قوالب:", sorted(templates.keys()),
+      "| مبادئ:", len(principles),
       "| متعددة المجموعات:", [k for k, v in templates.items() if len(v["subgroups"]) > 1])

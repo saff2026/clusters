@@ -33,7 +33,8 @@ for key, label, srcf, grpf in AGES:
         groups.append({"group": g["group"], "region": g.get("region", ""),
                        "teams": teams, "size": size, "tmpl": size if size in avail else None})
     ages.append({"key": key, "label": label, "settings": src["settings"],
-                 "summary": src["summary"], "templates": templates, "groups": groups})
+                 "summary": src["summary"], "templates": templates, "groups": groups,
+                 "principles": src.get("principles", [])})
 
 DATA = {"ages": ages}
 
@@ -76,6 +77,10 @@ td.rest{color:#6f9a86;font-style:italic;background:#08190f}
 .muted{color:#8fdcb4;font-size:13px}
 .stbl{overflow-x:auto}
 .hint{color:#8fdcb4;font-size:12.5px;margin:2px 0 12px}
+.prin{display:flex;gap:12px;align-items:flex-start;background:#0d3f2d;border:1px solid #1c6b49;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.prin .pn{flex:0 0 32px;height:32px;border-radius:50%;background:#ffd166;color:#04150e;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}
+.prin .pt{font-weight:800;font-size:14.5px;color:#eafff3;margin-bottom:3px}
+.prin .pe{color:#bfe9d4;font-size:12.5px;line-height:1.7}
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
@@ -88,6 +93,7 @@ td.rest{color:#6f9a86;font-style:italic;background:#08190f}
 </div>
 <script>
 const D=__DATA__;
+const PR=(D.ages.slice().sort((a,b)=>((b.principles||[]).length)-((a.principles||[]).length))[0]||{}).principles||[];
 function gp(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function arCount(n,one,two,few,many){const m=n%100;if(n===1)return one;if(n===2)return two;
   if(m>=3&&m<=10)return gp(n)+' '+few;return gp(n)+' '+many;}
@@ -130,15 +136,22 @@ function teamMatchesHTML(t,teams,idx){
   h+='</table></div>';return {html:h,count:rows.length};
 }
 // ===== الحالة =====
-let curAge=-1, tab='groups', curG=0, curT=0, curTeam=null;
+let curAge=-1, tab='groups', curG=0, curT=0, curTeam=null, curRegion='';
 function A(){return D.ages[curAge];}
-function resetAge(){curG=0;curTeam=null;tab='groups';
+function resetAge(){curG=0;curTeam=null;curRegion='';tab='groups';
   const sz=Object.keys(A().templates).map(Number).sort((a,b)=>a-b);curT=sz.length?sz[0]:0;}
 function renderAgebar(){
   let h='<button class="agebtn'+(curAge===-1?' on':'')+'" data-i="-1">📋 ملخص الكل</button>';
   h+=D.ages.map((a,i)=>'<button class="agebtn'+(i===curAge?' on':'')+'" data-i="'+i+'">'+esc(a.label)+'</button>').join('');
+  if(PR.length)h+='<button class="agebtn'+(curAge===-2?' on':'')+'" data-i="-2">📜 المبادئ</button>';
   document.getElementById('agebar').innerHTML=h;
   document.querySelectorAll('#agebar .agebtn').forEach(b=>b.onclick=()=>{curAge=+b.dataset.i;if(curAge>=0)resetAge();render();window.scrollTo(0,0);});}
+function principlesPanel(){
+  if(!PR.length)return '<div class="muted">لا توجد مبادئ.</div>';
+  let h='<h3 class="sec">المبادئ الأساسية لبناء الجداول</h3>';
+  PR.forEach((p,i)=>{h+='<div class="prin"><div class="pn">'+(i+1)+'</div><div><div class="pt">'+esc(p.p)+'</div>'+
+    (p.e?'<div class="pe">'+esc(p.e)+'</div>':'')+'</div></div>';});
+  return h;}
 function overviewPanel(){
   let h='<div class="hint">📋 ملخص البطولات لكل الفئات — اضغط اسم الفئة بالأعلى للدخول في تفاصيلها.</div>';
   D.ages.forEach(a=>{const s=a.summary;
@@ -153,10 +166,16 @@ function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])
   '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
   document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
 function groupsPanel(){
-  const gs2=A().groups;const g=gs2[curG];
-  let h='<div class="hint">💡 اختر مجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div>';
-  h+='<select id="gsel" class="sel">'+gs2.map((x,i)=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
-    esc(x.group)+' — '+nTeam(x.size)+'</option>').join('')+'</select>';
+  const all=A().groups;
+  const regions=[...new Set(all.map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
+  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div>';
+  h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>🗺️ كل المناطق</option>'+
+    regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
+  const idx=all.map((g,i)=>i).filter(i=>!curRegion||all[i].region===curRegion);
+  if(idx.indexOf(curG)<0){curG=idx.length?idx[0]:-1;curTeam=null;}
+  h+='<select id="gsel" class="sel">'+idx.map(i=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
+    esc(all[i].group)+' — '+nTeam(all[i].size)+'</option>').join('')+'</select>';
+  const g=all[curG];
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
     if(g.tmpl){
@@ -202,8 +221,10 @@ function render(){
   const p=document.getElementById('panel');
   if(curAge===-1){document.getElementById('tabs').innerHTML='';p.innerHTML=overviewPanel();return;}
   renderTabs();
+  if(curAge===-2){document.getElementById('tabs').innerHTML='';p.innerHTML=principlesPanel();return;}
   p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
   if(tab==='groups'){
+    const rs=document.getElementById('rsel');if(rs)rs.onchange=()=>{curRegion=rs.value;curTeam=null;curG=-1;render();window.scrollTo(0,0);};
     const gs=document.getElementById('gsel');if(gs)gs.onchange=()=>{curG=+gs.value;curTeam=null;render();window.scrollTo(0,0);};
     const ts=document.getElementById('tsel');if(ts)ts.onchange=()=>{const v=+ts.value;curTeam=(v<0?null:v);render();};
   }
