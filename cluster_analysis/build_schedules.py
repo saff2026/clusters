@@ -58,12 +58,14 @@ def parse_template(ws):
             if cur is not None:
                 days.append({"day": cur, "slots": slots})
             cur, slots = day, []
-        # صف فترة: فيه وقت يحوي رقمًا
-        if time and re.search(r"\d", time) and cur is not None:
-            cells = [r[j] if j < len(r) else "" for j in pitch_idx]
+        # صف فترة حقيقي: الوقت يحوي ":" مثل «5:00–5:15 م» (يستبعد جداول الإحصاءات الملحقة)
+        if time and ":" in time and cur is not None:
+            cells = ["" if S(r[j]) == "0" else (r[j] if j < len(r) else "")
+                     for j in pitch_idx]
             slots.append({"time": time, "cells": cells})
     if cur is not None:
         days.append({"day": cur, "slots": slots})
+    days = [d for d in days if d["slots"]]
     return {"title": title, "pitches": pitches, "days": days}
 
 templates = {}
@@ -155,7 +157,7 @@ function cellHTML(cell,teams){
   if(/^استراحة/.test(cell))return '<span class="rest-in">—</span>';
   return esc(cell);
 }
-function isRestRow(s){return s.cells.every(c=>c===''||/^استراحة/.test(c));}
+function isRestRow(s){return s.cells.some(c=>/^استراحة/.test(c))&&s.cells.every(c=>c===''||/^استراحة/.test(c));}
 function renderTemplate(t,teams){
   if(!t)return '';
   let h='';
