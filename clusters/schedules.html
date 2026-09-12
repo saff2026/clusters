@@ -46,7 +46,6 @@ td.rest{color:#6f9a86;font-style:italic;background:#08190f}
 </div>
 <div class="wrap">
  <div class="agebar" id="agebar"></div>
- <div class="cards" id="cards"></div>
  <div class="tabs" id="tabs"></div>
  <div class="panel" id="panel"></div>
 </div>
@@ -71,7 +70,7 @@ function isRestRow(s){return s.cells.some(c=>/^استراحة/.test(c))&&s.cells
 function renderTemplate(t,teams){
   if(!t)return '';let h='';
   t.days.forEach(day=>{
-    h+='<div class="dayttl">'+esc(day.day)+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
+    h+='<div class="dayttl">اليوم '+esc(dayNum(day.day))+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
       t.pitches.map(p=>'<th>'+esc(p)+'</th>').join('')+'</tr>';
     day.slots.forEach(s=>{
       if(isRestRow(s)){h+='<tr><td class="time">'+esc(s.time)+'</td><td class="rest" colspan="'+t.pitches.length+'">استراحة</td></tr>';return;}
@@ -153,7 +152,7 @@ function summaryPanel(){
   h+='</table></div>';return h;
 }
 function render(){
-  renderAgebar();renderCards();renderTabs();
+  renderAgebar();renderTabs();
   const p=document.getElementById('panel');
   p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
   if(tab==='groups'){
