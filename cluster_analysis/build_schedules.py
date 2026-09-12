@@ -88,12 +88,18 @@ for sn in wb.sheetnames:
 
 # ---- المجموعات الفعلية ----
 G = json.load(open(GROUPS, encoding="utf-8"))
+# المنطقة الصحيحة لكل مجموعة من _maps.json (GRREG) — المصدر المعتمد لبقية الصفحات
+try:
+    GRREG = json.load(open(BASE + "_maps.json", encoding="utf-8")).get("GRREG", {})
+except Exception:
+    GRREG = {}
 avail = set(templates.keys())
 groups = []
 for g in G["groups"]:
     teams = [t["name"] for t in g["teams"]]
     size = len(teams)
-    groups.append({"group": g["group"], "region": g.get("region", ""),
+    region = GRREG.get(g["group"], "")   # المصدر المعتمد؛ نتجاهل المنطقة القديمة الخاطئة
+    groups.append({"group": g["group"], "region": region,
                    "teams": teams, "size": size,
                    "tmpl": size if size in avail else None})
 
