@@ -79,7 +79,7 @@ function renderTemplate(t,teams){
   if(!t)return '';
   let h='';
   t.days.forEach(day=>{
-    h+='<div class="dayttl">'+esc(dayNum(day.day))+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
+    h+='<div class="dayttl">'+esc(day.day)+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
       t.pitches.map(p=>'<th>'+esc(p)+'</th>').join('')+'</tr>';
     day.slots.forEach(s=>{
       if(isRestRow(s)){h+='<tr><td class="time">'+esc(s.time)+'</td><td class="rest" colspan="'+t.pitches.length+'">استراحة</td></tr>';return;}
