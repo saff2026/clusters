@@ -188,11 +188,10 @@ function groupsPanel(){
   if(idx.indexOf(curG)<0){curG=idx.length?idx[0]:-1;curTeam=null;}
   h+='<div class="sellbl">🧩 المجموعة</div>';
   h+='<select id="gsel" class="sel">'+idx.map(i=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
-    esc(all[i].group)+' — '+nTeam(all[i].size)+(all[i].pitches?' · 🏟️ '+all[i].pitches:'')+'</option>').join('')+'</select>';
+    esc(all[i].group)+' — '+nTeam(all[i].size)+'</option>').join('')+'</select>';
   const g=all[curG];
   if(g){
-    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+
-      (g.pitches?' · 🏟️ '+nPitch(g.pitches):'')+(g.pday?' · '+esc(g.pday):'')+'</h3>';
+    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
     if(g.tmpl){
       const tmpl=A().templates[String(g.tmpl)];const subs=tmpl.subgroups||[];
       if(subs.length>1){
