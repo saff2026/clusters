@@ -224,23 +224,16 @@ function tmplPanel(){
 }
 function summaryPanel(){
   const s=A().summary;
-  let h='';
-  if(s.headers.length){
-    h+='<h3 class="sec">ملخص جداول المجموعات (حسب عدد الفرق)</h3><div class="stbl"><table><tr>'+
-      s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>';
-    s.rows.forEach(r=>{h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+'</tr>';});
-    h+='</table></div>';
-  }
-  // جدول عدد الملاعب لكل مجموعة (من ملف التسجيل)
-  const gs=A().groups.slice().sort((a,b)=>(b.pitches||0)-(a.pitches||0)||b.size-a.size);
-  if(gs.length){
-    h+='<h3 class="sec">🏟️ عدد الملاعب لكل مجموعة</h3><div class="stbl"><table>'+
-      '<tr><th>المجموعة</th><th>المنطقة</th><th>عدد الفرق</th><th>عدد الملاعب</th><th>مباريات اليوم</th><th>اليوم</th></tr>';
-    gs.forEach(g=>{h+='<tr><td>'+esc(g.group)+'</td><td>'+esc(g.region||'—')+'</td><td>'+g.size+
-      '</td><td class="time">'+(g.pitches||'—')+'</td><td>'+(g.pmatches||'—')+'</td><td>'+esc(g.pday||'—')+'</td></tr>';});
-    h+='</table></div>';
-  }
-  return h||'<div class="muted">لا يوجد ملخص.</div>';
+  if(!s.headers.length)return '<div class="muted">لا يوجد ملخص.</div>';
+  // خريطة: عدد الفرق -> عدد الملاعب المطلوبة من ملف التسجيل (للمقارنة)
+  const sizePitch={};A().groups.forEach(g=>{if(g.pitches&&!(g.size in sizePitch))sizePitch[g.size]=g.pitches;});
+  let h='<h3 class="sec">ملخص جداول المجموعات (حسب عدد الفرق)</h3><div class="stbl"><table><tr>'+
+    s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'<th>🏟️ ملاعب (التسجيل)</th></tr>';
+  s.rows.forEach(r=>{const n=parseInt(String(r[0]).replace(/[^0-9]/g,''))||0;const rp=sizePitch[n];
+    h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+
+      '<td class="time">'+(rp||'—')+'</td></tr>';});
+  h+='</table></div>';
+  return h;
 }
 function render(){
   renderAgebar();
