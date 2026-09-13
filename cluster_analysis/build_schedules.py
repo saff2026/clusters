@@ -155,7 +155,6 @@ function resetAge(){curG=0;curTeam=null;curRegion='';tab='groups';
 function renderAgebar(){
   let h='<button class="agebtn'+(curAge===-1?' on':'')+'" data-i="-1">📋 ملخص الكل</button>';
   h+=D.ages.map((a,i)=>'<button class="agebtn'+(i===curAge?' on':'')+'" data-i="'+i+'">'+esc(a.label)+'</button>').join('');
-  if(PR.length)h+='<button class="agebtn'+(curAge===-2?' on':'')+'" data-i="-2">📜 المبادئ</button>';
   document.getElementById('agebar').innerHTML=h;
   document.querySelectorAll('#agebar .agebtn').forEach(b=>b.onclick=()=>{curAge=+b.dataset.i;if(curAge>=0)resetAge();render();window.scrollTo(0,0);});}
 function principlesPanel(){
