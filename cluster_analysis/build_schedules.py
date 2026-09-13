@@ -59,8 +59,9 @@ HTML = r"""<!DOCTYPE html>
 .tab{background:#0d4b32;border:1px solid #1c7a52;color:#eafff3;border-radius:20px;padding:8px 18px;cursor:pointer;font-family:'Tajawal';font-size:14px;font-weight:700}
 .tab.on{background:#ffd166;color:#04150e;border-color:#ffd166}
 .panel{background:#0b2c1f;border:1px solid #14543a;border-radius:14px;padding:14px}
-.sel{background:#0d3f2d;color:#eafff3;border:1px solid #1c6b49;border-radius:10px;padding:10px 14px;font-family:'Tajawal';font-weight:700;font-size:14px;min-width:min(300px,100%);max-width:100%;margin-bottom:12px;cursor:pointer}
+.sel{display:block;background:#0d3f2d;color:#eafff3;border:1px solid #1c6b49;border-radius:10px;padding:10px 14px;font-family:'Tajawal';font-weight:700;font-size:14px;width:100%;max-width:520px;margin-bottom:10px;cursor:pointer}
 .sel option{background:#0b2c1f;color:#eafff3}
+.sellbl{color:#8fdcb4;font-size:12px;font-weight:700;margin:6px 0 3px}
 .roster{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px}
 .rteam{background:#0d3f2d;border:1px solid #1c6b49;border-radius:8px;padding:5px 10px;font-size:12.5px}
 .rteam b{color:#ffd166;margin-left:5px}
@@ -169,10 +170,12 @@ function groupsPanel(){
   const all=A().groups;
   const regions=[...new Set(all.map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
   let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div>';
-  h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>🗺️ كل المناطق</option>'+
+  h+='<div class="sellbl">🗺️ المنطقة</div>';
+  h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
   const idx=all.map((g,i)=>i).filter(i=>!curRegion||all[i].region===curRegion);
   if(idx.indexOf(curG)<0){curG=idx.length?idx[0]:-1;curTeam=null;}
+  h+='<div class="sellbl">🧩 المجموعة</div>';
   h+='<select id="gsel" class="sel">'+idx.map(i=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
     esc(all[i].group)+' — '+nTeam(all[i].size)+'</option>').join('')+'</select>';
   const g=all[curG];
