@@ -46,7 +46,7 @@ HTML = r"""<!DOCTYPE html>
 <style>
 *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#eafff3}
 .top{background:#006C35;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.top img.logo{height:46px}
+.top img.logo{height:46px;width:auto;filter:brightness(0) invert(1)}
 .top h1{font-size:19px;margin:0;font-weight:800}
 .wrap{max-width:1080px;margin:0 auto;padding:16px}
 .agebar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
