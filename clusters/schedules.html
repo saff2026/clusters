@@ -115,14 +115,18 @@ function principlesPanel(){
   PR.forEach((p,i)=>{h+='<div class="prin"><div class="pn">'+(i+1)+'</div><div><div class="pt">'+esc(p.p)+'</div>'+
     (p.e?'<div class="pe">'+esc(p.e)+'</div>':'')+'</div></div>';});
   return h;}
+// جدول ملخص فئة واحدة مع عمود «ملاعب (التسجيل)» للمقارنة
+function summaryTable(a){
+  const s=a.summary;if(!s.headers.length)return '<div class="muted">لا يوجد ملخص.</div>';
+  const sizePitch={};a.groups.forEach(g=>{if(g.pitches&&!(g.size in sizePitch))sizePitch[g.size]=g.pitches;});
+  let h='<div class="stbl"><table><tr>'+s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'<th>🏟️ ملاعب (التسجيل)</th></tr>';
+  s.rows.forEach(r=>{const n=parseInt(String(r[0]).replace(/[^0-9]/g,''))||0;const rp=sizePitch[n];
+    h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+
+      '<td class="time">'+(rp||'—')+'</td></tr>';});
+  h+='</table></div>';return h;}
 function overviewPanel(){
   let h='<div class="hint">📋 ملخص البطولات لكل الفئات — اضغط اسم الفئة بالأعلى للدخول في تفاصيلها.</div>';
-  D.ages.forEach(a=>{const s=a.summary;
-    h+='<h3 class="sec">'+esc(a.label)+'</h3>';
-    if(!s.headers.length){h+='<div class="muted">لا يوجد ملخص.</div>';return;}
-    h+='<div class="stbl"><table><tr>'+s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>';
-    s.rows.forEach(r=>{h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+'</tr>';});
-    h+='</table></div>';});
+  D.ages.forEach(a=>{h+='<h3 class="sec">'+esc(a.label)+'</h3>'+summaryTable(a);});
   return h;}
 const TABS=[['groups','المجموعات'],['tmpl','قوالب الجداول'],['summary','ملخص البطولات']];
 function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>
@@ -175,17 +179,8 @@ function tmplPanel(){
   return h;
 }
 function summaryPanel(){
-  const s=A().summary;
-  if(!s.headers.length)return '<div class="muted">لا يوجد ملخص.</div>';
-  // خريطة: عدد الفرق -> عدد الملاعب المطلوبة من ملف التسجيل (للمقارنة)
-  const sizePitch={};A().groups.forEach(g=>{if(g.pitches&&!(g.size in sizePitch))sizePitch[g.size]=g.pitches;});
-  let h='<h3 class="sec">ملخص جداول المجموعات (حسب عدد الفرق)</h3><div class="stbl"><table><tr>'+
-    s.headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'<th>🏟️ ملاعب (التسجيل)</th></tr>';
-  s.rows.forEach(r=>{const n=parseInt(String(r[0]).replace(/[^0-9]/g,''))||0;const rp=sizePitch[n];
-    h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+
-      '<td class="time">'+(rp||'—')+'</td></tr>';});
-  h+='</table></div>';
-  return h;
+  if(!A().summary.headers.length)return '<div class="muted">لا يوجد ملخص.</div>';
+  return '<h3 class="sec">ملخص جداول المجموعات (حسب عدد الفرق)</h3>'+summaryTable(A());
 }
 function render(){
   renderAgebar();
