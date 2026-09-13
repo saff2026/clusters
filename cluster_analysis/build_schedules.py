@@ -19,6 +19,12 @@ AGES = [
 def load(fn):
     return json.load(open(BASE + fn, encoding="utf-8"))
 
+# عدد الملاعب المطلوبة لكل مجموعة (من ورقة «عدد الملاعب» في ملف التسجيل)
+try:
+    PIT = load("schedule_pitches.json")
+except Exception:
+    PIT = {}
+
 ages = []
 for key, label, srcf, grpf in AGES:
     if not (os.path.exists(BASE + srcf) and os.path.exists(BASE + grpf)):
@@ -26,12 +32,16 @@ for key, label, srcf, grpf in AGES:
     src = load(srcf); G = load(grpf)
     templates = src["templates"]
     avail = set(int(k) for k in templates.keys())
+    pmap = PIT.get(label, {})
     groups = []
     for g in G["groups"]:
         teams = [t["name"] for t in g["teams"]]
         size = len(teams)
+        pi = pmap.get(g["group"], {})
         groups.append({"group": g["group"], "region": g.get("region", ""),
-                       "teams": teams, "size": size, "tmpl": size if size in avail else None})
+                       "teams": teams, "size": size, "tmpl": size if size in avail else None,
+                       "pitches": pi.get("pitches", 0), "pday": pi.get("day", ""),
+                       "pmatches": pi.get("matchesDay", 0)})
     ages.append({"key": key, "label": label, "settings": src["settings"],
                  "summary": src["summary"], "templates": templates, "groups": groups,
                  "principles": src.get("principles", [])})
@@ -100,6 +110,7 @@ function arCount(n,one,two,few,many){const m=n%100;if(n===1)return one;if(n===2)
   if(m>=3&&m<=10)return gp(n)+' '+few;return gp(n)+' '+many;}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
 function nMatch(n){return arCount(n,'مباراة واحدة','مباراتان','مباريات','مباراةً');}
+function nPitch(n){return arCount(n,'ملعب واحد','ملعبان','ملاعب','ملعبًا');}
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function dayNum(d){return String(d).replace(/^\s*اليوم\s*/,'');}
 function subLabelOf(subs,num){for(const s of subs){if(s.teams.indexOf(num)>=0)return s.label;}return '';}
@@ -177,10 +188,11 @@ function groupsPanel(){
   if(idx.indexOf(curG)<0){curG=idx.length?idx[0]:-1;curTeam=null;}
   h+='<div class="sellbl">🧩 المجموعة</div>';
   h+='<select id="gsel" class="sel">'+idx.map(i=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
-    esc(all[i].group)+' — '+nTeam(all[i].size)+'</option>').join('')+'</select>';
+    esc(all[i].group)+' — '+nTeam(all[i].size)+(all[i].pitches?' · 🏟️ '+all[i].pitches:'')+'</option>').join('')+'</select>';
   const g=all[curG];
   if(g){
-    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
+    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+
+      (g.pitches?' · 🏟️ '+nPitch(g.pitches):'')+(g.pday?' · '+esc(g.pday):'')+'</h3>';
     if(g.tmpl){
       const tmpl=A().templates[String(g.tmpl)];const subs=tmpl.subgroups||[];
       if(subs.length>1){
