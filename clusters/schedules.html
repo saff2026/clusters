@@ -133,18 +133,20 @@ function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])
   '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
   document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
 function groupsPanel(){
+  const TARGET=6;
   const all=A().groups;
-  const regions=[...new Set(all.map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
-  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل).</div>';
+  const complete=i=>all[i].size>=TARGET;   // المكتملة فقط
+  const regions=[...new Set(all.filter(g=>g.size>=TARGET).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
+  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٦ فرق فأكثر) فقط.</div>';
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
-  const idx=all.map((g,i)=>i).filter(i=>!curRegion||all[i].region===curRegion);
+  const idx=all.map((g,i)=>i).filter(i=>complete(i)&&(!curRegion||all[i].region===curRegion));
   if(idx.indexOf(curG)<0){curG=idx.length?idx[0]:-1;curTeam=null;}
   h+='<div class="sellbl">🧩 المجموعة</div>';
   h+='<select id="gsel" class="sel">'+idx.map(i=>'<option value="'+i+'"'+(i===curG?' selected':'')+'>'+
     esc(all[i].group)+' — '+nTeam(all[i].size)+'</option>').join('')+'</select>';
-  const g=all[curG];
+  const g=(curG>=0)?all[curG]:null;
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
     if(g.tmpl){
