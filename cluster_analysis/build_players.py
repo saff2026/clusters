@@ -120,7 +120,7 @@ HTML = r"""<!DOCTYPE html>
  .navlink{background:#0b3524;border:1px solid #12563a;color:#eafff3;border-radius:20px;padding:8px 18px;
    text-decoration:none;font-size:14px;font-weight:800}
  .navlink.on{background:#ffd166;color:#04150e;border-color:#ffd166}
- .wrap{max-width:1200px;margin:0 auto;padding:18px}
+ .wrap{max-width:1500px;margin:0 auto;padding:18px}
  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
  .tab{background:#0d4b32;border:1px solid #1c7a52;color:#eafff3;border-radius:20px;padding:7px 16px;
    cursor:pointer;font-family:'Tajawal';font-size:14px;font-weight:700}
