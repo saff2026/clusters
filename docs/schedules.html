@@ -135,9 +135,10 @@ function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])
 function groupsPanel(){
   const TARGET=6;
   const all=A().groups;
-  const complete=i=>all[i].size>=TARGET;   // المكتملة فقط
-  const regions=[...new Set(all.filter(g=>g.size>=TARGET).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
-  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٦ فرق فأكثر) فقط.</div>';
+  // المكتملة = لها ملاعب مطلوبة في التسجيل (تعريف الاتحاد)، أو بلغت الحد الأدنى
+  const complete=i=>(all[i].pitches>0)||(all[i].size>=TARGET);
+  const regions=[...new Set(all.filter((g,i)=>complete(i)).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
+  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة فقط.</div>';
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
