@@ -77,7 +77,7 @@ function ageTabs(){
   el.innerHTML=AGES.map(a=>'<button class="tab'+(a===curAge?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curAge=b.dataset.a;render();});
 }
-// «جميع الفئات»: تجميع كل مجموعة عبر فئاتها المكتملة فقط (لا تُحسب الفئات غير المكتملة)
+// «جميع الفئات»: يُحسب المجموع من الفئات المكتملة فقط، مع بيان بقية الفئات (ناقصة) في الأشرطة
 function allAgesData(){
   const map={};
   S.ages.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
@@ -85,18 +85,22 @@ function allAgesData(){
     d.region=g.region; d.obj[age]=g;});});
   return Object.keys(map).map(grp=>{
     const d=map[grp];
-    const compAges=S.ages.filter(a=>(a in d.obj)&&d.obj[a].total>=TARGET);  // الفئات المكتملة فقط
-    const cities={},ages={},agesCities={};
-    compAges.forEach(a=>{const g=d.obj[a];
-      g.cities.forEach(c=>{cities[c.city]=(cities[c.city]||0)+c.n;});
-      ages[a]=g.total; agesCities[a]=g.cities.map(c=>c.city);});
+    const allAges=S.ages.filter(a=>a in d.obj);
+    const compAges=allAges.filter(a=>d.obj[a].total>=TARGET);   // الفئات المكتملة
+    // المدن والمجموع: من الفئات المكتملة فقط
+    const cities={};
+    compAges.forEach(a=>{d.obj[a].cities.forEach(c=>{cities[c.city]=(cities[c.city]||0)+c.n;});});
+    // الأشرطة: كل الفئات الظاهرة (لبيان المكتمل والناقص)
+    const ages={},agesCities={};
+    allAges.forEach(a=>{ages[a]=d.obj[a].total; agesCities[a]=d.obj[a].cities.map(c=>c.city);});
     const cityArr=Object.entries(cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
     const sig=a=>[...(agesCities[a]||[])].sort().join('،');
     const citiesVary=new Set(compAges.map(sig)).size>1;
     return {group:grp,region:d.region,total:cityArr.reduce((s,c)=>s+c.n,0),cities:cityArr,ages:ages,
             agesCities:agesCities,citiesVary:citiesVary,
-            agesN:compAges.length,doneAges:compAges.length,allDone:compAges.length>0};
-  }).filter(g=>g.agesN>0).sort((a,b)=>b.total-a.total);
+            agesN:allAges.length,doneAges:compAges.length,
+            allDone:compAges.length>0 && compAges.length===allAges.length};
+  }).filter(g=>g.doneAges>0).sort((a,b)=>b.total-a.total);
 }
 function curData(){ return curAge===ALL?allAgesData():(S.byAge[curAge]||[]).slice(); }
 function regionOptions(){
