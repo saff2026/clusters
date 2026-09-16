@@ -85,25 +85,26 @@ function ageTabs(){
   el.innerHTML=AGES.map(a=>'<button class="tab'+(a===curAge?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curAge=b.dataset.a;render();});
 }
-// «جميع الفئات»: تجميع كل مجموعة عبر الفئات (المدن بالجمع، والاكتمال = مكتملة في كل فئاتها)
+// «جميع الفئات»: تجميع كل مجموعة عبر فئاتها المكتملة فقط (لا تُحسب الفئات غير المكتملة)
 function allAgesData(){
   const map={};
   S.ages.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
-    const d=map[g.group]||(map[g.group]={region:g.region,cities:{},ages:{},agesCities:{}});
-    g.cities.forEach(c=>{d.cities[c.city]=(d.cities[c.city]||0)+c.n;});
-    d.ages[age]=(d.ages[age]||0)+g.total;
-    d.agesCities[age]=g.cities.map(c=>c.city);});});
+    const d=map[g.group]||(map[g.group]={region:g.region,obj:{}});
+    d.region=g.region; d.obj[age]=g;});});
   return Object.keys(map).map(grp=>{
     const d=map[grp];
-    const ageList=S.ages.filter(a=>a in d.ages);
-    const doneAges=ageList.filter(a=>d.ages[a]>=TARGET).length;
-    const cities=Object.entries(d.cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
-    const sig=a=>[...(d.agesCities[a]||[])].sort().join('،');
-    const citiesVary=new Set(ageList.map(sig)).size>1;
-    return {group:grp,region:d.region,total:cities.reduce((s,c)=>s+c.n,0),cities:cities,ages:d.ages,
-            agesCities:d.agesCities,citiesVary:citiesVary,
-            agesN:ageList.length,doneAges:doneAges,allDone:ageList.length>0&&doneAges===ageList.length};
-  }).sort((a,b)=>b.total-a.total);
+    const compAges=S.ages.filter(a=>(a in d.obj)&&d.obj[a].total>=TARGET);  // الفئات المكتملة فقط
+    const cities={},ages={},agesCities={};
+    compAges.forEach(a=>{const g=d.obj[a];
+      g.cities.forEach(c=>{cities[c.city]=(cities[c.city]||0)+c.n;});
+      ages[a]=g.total; agesCities[a]=g.cities.map(c=>c.city);});
+    const cityArr=Object.entries(cities).sort((a,b)=>b[1]-a[1]).map(([city,n])=>({city,n}));
+    const sig=a=>[...(agesCities[a]||[])].sort().join('،');
+    const citiesVary=new Set(compAges.map(sig)).size>1;
+    return {group:grp,region:d.region,total:cityArr.reduce((s,c)=>s+c.n,0),cities:cityArr,ages:ages,
+            agesCities:agesCities,citiesVary:citiesVary,
+            agesN:compAges.length,doneAges:compAges.length,allDone:compAges.length>0};
+  }).filter(g=>g.agesN>0).sort((a,b)=>b.total-a.total);
 }
 function curData(){ return curAge===ALL?allAgesData():(S.byAge[curAge]||[]).slice(); }
 function regionOptions(){
