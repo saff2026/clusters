@@ -137,10 +137,30 @@ for _age in ["11-14", "5-9"]:
 # خيار «اكسل»: تجميع رسمي من ملف الإكسل (يُحدَّث عبر update_from_excel.py)
 _egp = "/home/user/khitba/cluster_analysis/excel_groups.json"
 if os.path.exists(_egp):
-    def build_dataset_excel(groups):
+    # عدد الفرق لكل مدينة لكل فئة (لتحديد المجموعات المكتملة والمدن التي فيها فرق)
+    _CC = {}
+    try:
+        for _r in json.load(open("/home/user/khitba/cluster_analysis/teams2.json", encoding="utf-8")).get("rows", []):
+            _CC.setdefault(_r["age"], {})
+            _CC[_r["age"]][_r["city"]] = _CC[_r["age"]].get(_r["city"], 0) + _r.get("count", 0)
+    except Exception:
+        _CC = {}
+    _an = lambda a: (int(re.search(r"\d+", a).group()) if re.search(r"\d+", a) else 0)
+    _RANGE_AGES = {"5-9":   [a for a in _CC if _an(a) <= 9],
+                   "11-14": [a for a in _CC if _an(a) >= 11]}
+    _EX_TARGET = 6
+
+    def build_dataset_excel(groups, rng):
+        ages_r = _RANGE_AGES.get(rng, [])
         out = []
         for i, (region, gname, cities_ar) in enumerate(groups):
-            cities = [c for c in cities_ar if c in points]  # مدن لها إحداثيات فقط
+            # عدد فرق المجموعة في كل فئة (بمجموع مدنها) — مكتملة إذا بلغت الهدف في فئة واحدة على الأقل
+            complete = any(sum(_CC.get(a, {}).get(c, 0) for c in cities_ar) >= _EX_TARGET for a in ages_r)
+            if not complete:
+                continue
+            # المدن التي فيها فرق فقط (ولها إحداثيات) تكون ضمن المجموعة
+            cities = [c for c in cities_ar if c in points
+                      and sum(_CC.get(a, {}).get(c, 0) for a in ages_r) > 0]
             if not cities:
                 continue
             mx = cluster_maxsec(cities)
@@ -152,7 +172,7 @@ if os.path.exists(_egp):
     _eg = json.load(open(_egp, encoding="utf-8"))
     for _age in ["11-14", "5-9"]:
         if _eg.get(_age):
-            DATASETS[f"{_age} — اكسل"] = build_dataset_excel(_eg[_age])
+            DATASETS[f"{_age} — اكسل"] = build_dataset_excel(_eg[_age], _age)
 
 matrix = MX
 print("مصفوفة قوقل محمّلة:", len(matrix), "زوج")
