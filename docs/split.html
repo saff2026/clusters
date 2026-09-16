@@ -99,7 +99,9 @@ function allAgesData(){
 }
 function curData(){ return curAge===ALL?allAgesData():(S.byAge[curAge]||[]).slice(); }
 function regionOptions(){
-  const arr=curData();
+  const isAll=curAge===ALL;
+  const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
+  const arr=curData().filter(keep);
   const regs=[...new Set(arr.map(g=>g.region))].sort();
   const sel=document.getElementById('rgn');
   if(!regs.includes(curRegion))curRegion='الكل';
@@ -113,13 +115,14 @@ function statusTabs(){
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curStatus=b.dataset.s;render();});
 }
 function render(){
-  ageTabs(); regionOptions(); statusTabs();
+  ageTabs(); regionOptions();
+  document.getElementById('statT').innerHTML='';
   const isAll=curAge===ALL;
   const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
-  let arr=curData();
+  // لا تُحسب المجموعات غير المكتملة (أقل من ٦ فرق؛ وفي «جميع الفئات» = غير مكتملة في أي فئة)
+  const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
+  let arr=curData().filter(keep);
   if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);
-  if(curStatus==='المكتملة')arr=arr.filter(isDone);
-  else if(curStatus==='غير المكتملة')arr=arr.filter(g=>isAll?(g.doneAges===0):(g.total<TARGET));
   const done=arr.filter(isDone).length;
   const totTeams=arr.reduce((s,g)=>s+g.total,0);
   const cities=new Set(); arr.forEach(g=>g.cities.forEach(c=>cities.add(c.city)));
