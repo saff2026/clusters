@@ -130,7 +130,7 @@ function render(){
   const statEl=document.getElementById('statT');if(statEl)statEl.innerHTML='';
   const isAll=multiSel();
   const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
-  // لا تُحسب المجموعات غير المكتملة (أقل من ٦ فرق؛ وفي «جميع الفئات» = غير مكتملة في أي فئة)
+  // لا تُحسب المجموعات غير المكتملة (أقل من ٦ فرق؛ وفي عدة فئات = مكتملة في فئة واحدة على الأقل)
   const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
   let arr=curData().filter(keep);
   if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);
@@ -162,7 +162,8 @@ function render(){
       const vary=isAll&&g.citiesVary;
       html+='<div class="cnames">🏙️ '+g.cities.map(c=>c.city).join('، ')+(vary?' <span class="varyx">(المدن تختلف حسب الفئة)</span>':'')+'</div>';
       if(isAll){
-        const ags=S.ages.filter(a=>g.ages[a]!=null);
+        // اعرض الفئات المكتملة فقط (المجموعة مكتملة فيها ≥ المطلوب)
+        const ags=S.ages.filter(a=>g.ages[a]!=null && g.ages[a]>=TARGET);
         html+=ags.map(a=>{const n=g.ages[a];
           const ac=vary?'<div class="agc">'+(g.agesCities[a]||[]).join('، ')+'</div>':'';
           return '<div class="crow"><div class="cn">'+a+'</div><div class="v">'+nTeam(n)+'</div></div>'+ac;}).join('');
