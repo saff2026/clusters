@@ -61,8 +61,8 @@ HTML = r"""<!DOCTYPE html>
 </div>
 <div class="wrap">
  <div class="flt"><div class="lab">الفئة العمرية:</div><div class="tabs" id="ageT"></div></div>
+ <div style="color:#8fdcb4;font-size:12.5px;margin:-4px 0 8px">💡 تقدر تختار أكثر من فئة — تُجمع الأرقام لها تلقائيًا.</div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
- <div class="flt"><div class="lab">حالة الاكتمال:</div><div class="tabs" id="statT"></div></div>
  <div class="kpis" id="kpis"></div>
  <div id="content"></div>
 </div>
@@ -70,7 +70,10 @@ HTML = r"""<!DOCTYPE html>
 const S=__SPLIT__;
 const TARGET=S.target||6;
 const ALL='جميع الفئات';
-let curAge=ALL, curRegion='الكل', curStatus='الكل';
+let selAges=new Set(S.ages), curRegion='الكل';
+function selArr(){return S.ages.filter(a=>selAges.has(a));}
+function isAllSel(){return selArr().length===S.ages.length;}
+function multiSel(){return selArr().length>=2;}
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
@@ -80,20 +83,25 @@ function nCity(n){return arCount(n,'مدينة واحدة','مدينتان','م�
 function nCat(n){const m=n%100; return (m>=3&&m<=10)?'فئات':'فئة';}
 
 function ageTabs(){
-  const AGES=[ALL].concat(S.ages);
   const el=document.getElementById('ageT');
-  el.innerHTML=AGES.map(a=>'<button class="tab'+(a===curAge?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
-  el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curAge=b.dataset.a;render();});
+  el.innerHTML='<button class="tab'+(isAllSel()?' on':'')+'" data-a="__ALL__">'+ALL+'</button>'+
+    S.ages.map(a=>'<button class="tab'+(selAges.has(a)?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
+  el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.a;
+    if(a==='__ALL__'){selAges=new Set(S.ages);}
+    else{if(selAges.has(a))selAges.delete(a); else selAges.add(a); if(selAges.size===0)selAges=new Set(S.ages);}
+    render();
+  });
 }
-// «جميع الفئات»: يُحسب المجموع من الفئات المكتملة فقط، مع بيان بقية الفئات (ناقصة) في الأشرطة
-function allAgesData(){
+// تجميع كل مجموعة عبر الفئات المختارة (المجموع من الفئات المكتملة فقط)
+function aggData(agesIn){
   const map={};
-  S.ages.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
+  agesIn.forEach(age=>{(S.byAge[age]||[]).forEach(g=>{
     const d=map[g.group]||(map[g.group]={region:g.region,obj:{}});
     d.region=g.region; d.obj[age]=g;});});
   return Object.keys(map).map(grp=>{
     const d=map[grp];
-    const allAges=S.ages.filter(a=>a in d.obj);
+    const allAges=agesIn.filter(a=>a in d.obj);
     const compAges=allAges.filter(a=>d.obj[a].total>=TARGET);   // الفئات المكتملة
     // المدن والمجموع: من الفئات المكتملة فقط
     const cities={};
@@ -110,9 +118,13 @@ function allAgesData(){
             allDone:compAges.length>0 && compAges.length===allAges.length};
   }).filter(g=>g.doneAges>0).sort((a,b)=>b.total-a.total);
 }
-function curData(){ return curAge===ALL?allAgesData():(S.byAge[curAge]||[]).slice(); }
+function curData(){
+  const a=selArr();
+  if(a.length===1) return (S.byAge[a[0]]||[]).slice();   // فئة واحدة: عرض المدن
+  return aggData(a);                                      // عدة فئات: تجميع
+}
 function regionOptions(){
-  const isAll=curAge===ALL;
+  const isAll=multiSel();
   const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
   const arr=curData().filter(keep);
   const regs=[...new Set(arr.map(g=>g.region))].sort();
@@ -121,16 +133,10 @@ function regionOptions(){
   sel.innerHTML='<option value="الكل">كل المناطق</option>'+regs.map(r=>'<option'+(r===curRegion?' selected':'')+'>'+r+'</option>').join('');
   sel.onchange=()=>{curRegion=sel.value;render();};
 }
-function statusTabs(){
-  const opts=['الكل','المكتملة','غير المكتملة'];
-  const el=document.getElementById('statT');
-  el.innerHTML=opts.map(o=>'<button class="tab'+(o===curStatus?' on':'')+'" data-s="'+o+'">'+o+'</button>').join('');
-  el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{curStatus=b.dataset.s;render();});
-}
 function render(){
   ageTabs(); regionOptions();
-  document.getElementById('statT').innerHTML='';
-  const isAll=curAge===ALL;
+  const statEl=document.getElementById('statT');if(statEl)statEl.innerHTML='';
+  const isAll=multiSel();
   const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
   // لا تُحسب المجموعات غير المكتملة (أقل من ٦ فرق؛ وفي «جميع الفئات» = غير مكتملة في أي فئة)
   const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
@@ -141,7 +147,7 @@ function render(){
   const cities=new Set(); arr.forEach(g=>g.cities.forEach(c=>cities.add(c.city)));
   document.getElementById('kpis').innerHTML=
     '<div class="kpi"><div class="n">'+arr.length+'</div><div class="l">عدد المجموعات</div></div>'+
-    '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done+'</div><div class="l">'+(isAll?'مكتملة في كل الفئات':'مجموعات مكتملة')+'</div></div>'+
+    '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done+'</div><div class="l">'+(isAll?'مكتملة في كل الفئات المختارة':'مجموعات مكتملة')+'</div></div>'+
     '<div class="kpi"><div class="n">'+totTeams+'</div><div class="l">مجموع الفِرَق</div></div>'+
     '<div class="kpi"><div class="n">'+cities.size+'</div><div class="l">عدد المدن</div></div>';
   // تجميع حسب المنطقة
@@ -155,7 +161,7 @@ function render(){
     gs.forEach(g=>{
       const ok=isDone(g);
       const stTxt=isAll
-        ?(g.allDone?'مكتملة في كل الفئات':'مكتملة في '+g.doneAges+' من '+g.agesN+' '+nCat(g.agesN))
+        ?(g.allDone?'مكتملة في كل الفئات المختارة':'مكتملة في '+g.doneAges+' من '+g.agesN+' '+nCat(g.agesN))
         :(ok?'مكتمل'+(g.total>TARGET?' (زائد '+(g.total-TARGET)+')':''):'باقٍ '+(TARGET-g.total)+' للوصول إلى '+TARGET);
       html+='<div class="gcard'+(ok?' done':'')+'"><div class="ghead"><b>'+g.group+'</b>'+
         '<span class="badge">'+nTeam(g.total)+'</span>'+
