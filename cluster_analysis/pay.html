@@ -27,6 +27,7 @@
  .switch input:checked + .sl{background:#e0483d}
  .switch input:checked + .sl:before{transform:translateX(-24px)}
  .simrow .txt{font-weight:700;font-size:14px} .simrow .sub{color:#9fb6d0;font-size:12px;font-weight:400}
+ .simsub{color:#9fb6d0;font-size:12.5px;margin:-4px 0 12px}
  .kpis{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0 18px}
  .kpi{background:#0d3f2d;border:1px solid #12563a;border-radius:12px;padding:16px 20px;flex:1;min-width:170px;text-align:center}
  .kpi .n{font-size:30px;font-weight:800;color:#ffd166;line-height:1.1}
@@ -56,12 +57,9 @@
 </div>
 <div class="wrap">
  <div class="note" style="background:#0d3f2d;border:1px solid #12563a;border-radius:10px;padding:10px 14px;margin:0 0 14px">ℹ️ هذا التحليل خاص بفرق <b>الهواة</b> فقط — الأندية والأكاديميات تُعتبر مسدِّدة ومفعِّلة الحساب.</div>
- <div class="flt"><div class="lab">المعيار:</div><div class="tabs" id="metT"></div></div>
+ <div class="flt"><div class="lab">اختر الحالة (تُحاكى فورًا: إلغاء هذه الفرق):</div><div class="tabs" id="metT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
- <div class="simrow">
-   <label class="switch"><input type="checkbox" id="sim"><span class="sl"></span></label>
-   <div><div class="txt" id="simtxt"></div><div class="sub" id="simsub"></div></div>
- </div>
+ <div class="simsub" id="simsub"></div>
  <div class="kpis" id="kpis"></div>
  <div id="content"></div>
 </div>
@@ -71,7 +69,7 @@ const T=P.target;
 const META={pay:{name:'حالة السداد',teamsL:'فرق لم تُسدِّد',simTxt:'محاكاة: ألغِ الفرق التي لم تُسدِّد',bad:'لم يتم السداد'},
             acct:{name:'تفعيل الحساب',teamsL:'فرق لم تُفعِّل الحساب',simTxt:'محاكاة: ألغِ الفرق التي لم تُفعِّل حساب تسجيل اللاعبين',bad:'لم يُفعّل الحساب'},
             both:{name:'لم يُسدِّد ولم يُفعِّل',teamsL:'فرق لم تُسدِّد ولم تُفعِّل الحساب',simTxt:'محاكاة: ألغِ الفرق التي لم تُسدِّد ولم تُفعِّل الحساب معًا',bad:'لم يُسدِّد ولم يُفعّل'}};
-let curMet='pay', curRegion='الكل', sim=false;
+let curMet='pay', curRegion='الكل';
 
 function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
@@ -98,9 +96,7 @@ function groupsInScope(){
 function render(){
   metTabs(); regionOptions();
   const m=P.metrics[curMet], meta=META[curMet];
-  document.getElementById('simtxt').textContent=meta.simTxt;
-  document.getElementById('simsub').textContent='تُطرح فرق هذه المنشآت من مجموعاتها وتُعاد حسبة الاكتمال (المطلوب '+T+' فرق لكل مجموعة).';
-  const simEl=document.getElementById('sim'); simEl.checked=sim; simEl.onchange=()=>{sim=simEl.checked;render();};
+  document.getElementById('simsub').textContent='محاكاة فورية: تُطرح '+meta.teamsL+' من مجموعاتها وتُعاد حسبة الاكتمال (المطلوب '+T+' فرق لكل مجموعة)، وتُعرض المجموعات التي لن تكتمل.';
 
   // توزيع على المناطق (عدد الفرق)
   const brT=m.byRegionTeams, brE=m.byRegionEntries;
@@ -108,7 +104,6 @@ function render(){
   if(curRegion!=='الكل')regList=regList.filter(r=>r===curRegion);
   regList.sort((a,b)=>(brT[b]||0)-(brT[a]||0));
   const teamsSel=regList.reduce((s,r)=>s+(brT[r]||0),0);
-  const entSel=regList.reduce((s,r)=>s+(brE[r]||0),0);
 
   // محاكاة الأثر على المجموعات
   const scope=groupsInScope();
@@ -123,59 +118,45 @@ function render(){
   });
   const compAfter=compBefore-affected.length;
 
-  // KPIs
-  const kp=document.getElementById('kpis');
-  if(!sim){
-    kp.innerHTML=
-      '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div></div>'+
-      '<div class="kpi"><div class="n">'+(P.amateurTeams?Math.round(teamsSel/P.amateurTeams*100):0)+'%</div><div class="l">من فرق الهواة ('+P.amateurTeams+')</div></div>'+
-      '<div class="kpi"><div class="n">'+entSel+'</div><div class="l">مشاركات متأثرة (فريق×فئة)</div></div>'+
-      '<div class="kpi"><div class="n">'+regList.length+'</div><div class="l">مناطق فيها فرق كهذه</div></div>';
-  }else{
-    kp.innerHTML=
-      '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div></div>'+
-      '<div class="kpi bad"><div class="n">'+affected.length+'</div><div class="l">مجموعات تخرج من الاكتمال</div></div>'+
-      '<div class="kpi good"><div class="n">'+compAfter+'</div><div class="l">مجموعات تبقى مكتملة (كانت '+compBefore+')</div></div>'+
-      '<div class="kpi"><div class="n">'+removedFromComplete+'</div><div class="l">فرق تُحذف من مجموعات مكتملة</div></div>';
-  }
+  // KPIs (محاكاة دائمًا)
+  document.getElementById('kpis').innerHTML=
+    '<div class="kpi bad"><div class="n">'+affected.length+'</div><div class="l">مجموعات لن تكتمل</div></div>'+
+    '<div class="kpi good"><div class="n">'+compAfter+'</div><div class="l">مجموعات تبقى مكتملة (كانت '+compBefore+')</div></div>'+
+    '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div></div>'+
+    '<div class="kpi"><div class="n">'+removedFromComplete+'</div><div class="l">فرق تُحذف من مجموعات مكتملة</div></div>';
 
   let html='';
-  // قسم التوزيع على المناطق
-  html+='<div class="sec">📍 التوزيع على المناطق</div>';
+  // القسم الأساسي: المجموعات التي لن تكتمل
+  html+='<div class="sec">🧩 المجموعات التي لن تكتمل ('+nGroup(affected.length)+')</div>';
+  if(affected.length===0){
+    html+='<div class="card muted">لا توجد مجموعة تخرج من الاكتمال ضمن هذا النطاق.</div>';
+  }else{
+    affected.sort((a,b)=>(T-b.after)-(T-a.after)||b.rmv-a.rmv);
+    html+='<div class="card" style="padding:4px 8px"><table class="gt"><thead><tr>'+
+      '<th>المجموعة</th><th>الفئة</th><th>المنطقة</th><th>قبل</th><th>يُحذف</th><th>بعد</th><th>ناقص</th>'+
+      '</tr></thead><tbody>';
+    affected.forEach(g=>{
+      html+='<tr><td><b>'+g.group+'</b></td><td><span class="pill">'+g.age+'</span></td>'+
+        '<td>'+g.region.replace(/^منطقة /,'')+'</td>'+
+        '<td class="b4">'+g.total+'</td><td class="arw">−'+g.rmv+'</td>'+
+        '<td class="af">'+g.after+'</td><td>'+(T-g.after)+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+
+  // قسم التوزيع على المناطق (لعدد الفرق غير المطابقة)
+  html+='<div class="sec">📍 توزيع '+meta.teamsL+' على المناطق</div>';
   const maxT=Math.max(1,...regList.map(r=>brT[r]||0));
   html+='<div class="card">';
   if(regList.length===0)html+='<div class="muted">لا توجد فرق مطابقة.</div>';
   regList.forEach(r=>{
-    const t=brT[r]||0,e=brE[r]||0;
+    const t=brT[r]||0;
     html+='<div class="rbar"><div class="rn">'+r.replace(/^منطقة /,'')+'</div>'+
       '<div class="track"><div class="fill" style="width:'+(t/maxT*100)+'%"></div></div>'+
       '<div class="v">'+nTeam(t)+'</div></div>';
   });
   html+='</div>';
 
-  // قسم أثر المجموعات (يظهر فقط في المحاكاة)
-  if(sim){
-    html+='<div class="sec">🧩 المجموعات التي تخرج من الاكتمال ('+nGroup(affected.length)+')</div>';
-    if(affected.length===0){
-      html+='<div class="card muted">لا توجد مجموعة تخرج من الاكتمال ضمن هذا النطاق.</div>';
-    }else{
-      affected.sort((a,b)=>(a.region+a.group).localeCompare(b.region+b.group,'ar')||0);
-      // رتب حسب حجم النقص
-      affected.sort((a,b)=>(T-b.after)-(T-a.after));
-      html+='<div class="card" style="padding:4px 8px"><table class="gt"><thead><tr>'+
-        '<th>المجموعة</th><th>الفئة</th><th>المنطقة</th><th>قبل</th><th>يُحذف</th><th>بعد</th><th>ناقص</th>'+
-        '</tr></thead><tbody>';
-      affected.forEach(g=>{
-        html+='<tr><td><b>'+g.group+'</b></td><td><span class="pill">'+g.age+'</span></td>'+
-          '<td>'+g.region.replace(/^منطقة /,'')+'</td>'+
-          '<td class="b4">'+g.total+'</td><td class="arw">−'+g.rmv+'</td>'+
-          '<td class="af">'+g.after+'</td><td>'+(T-g.after)+'</td></tr>';
-      });
-      html+='</tbody></table></div>';
-    }
-  }else{
-    html+='<div class="note">💡 فعِّل المحاكاة بالأعلى لرؤية أثر إلغاء هذه الفرق على اكتمال المجموعات.</div>';
-  }
   document.getElementById('content').innerHTML=html;
 }
 render();
