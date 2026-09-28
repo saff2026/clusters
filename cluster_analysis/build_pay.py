@@ -62,7 +62,7 @@ def age_of(cn):
 ages = sorted({age_of(c) for c in agecols},
               key=lambda x: int("".join(ch for ch in x if ch.isdigit())))
 
-MET = ("pay", "acct", "both")
+MET = ("pay", "acct", "both", "either")
 rm = {k: defaultdict(int) for k in MET}     # (age,grp) -> فرق محذوفة
 teams_ct = {k: 0 for k in MET}
 entries_ct = {k: 0 for k in MET}
@@ -103,7 +103,8 @@ for r in r2[hi + 1:]:
     total_entries += ent
     if is_amateur:
         amateur_teams += 1
-    for metric, flag in (("pay", unpaid), ("acct", not_acct), ("both", unpaid and not_acct)):
+    for metric, flag in (("pay", unpaid), ("acct", not_acct),
+                         ("both", unpaid and not_acct), ("either", unpaid or not_acct)):
         if flag:
             teams_ct[metric] += 1
             entries_ct[metric] += ent
@@ -210,7 +211,8 @@ const P=__PAY__;
 const T=P.target;
 const META={pay:{name:'حالة السداد',teamsL:'جهات لم تُسدِّد',bad:'لم يتم السداد'},
             acct:{name:'تفعيل الحساب',teamsL:'جهات لم تُفعِّل الحساب',bad:'لم يُفعّل الحساب'},
-            both:{name:'لم يُسدِّد ولم يُفعِّل',teamsL:'جهات لم تُسدِّد ولم تُفعِّل الحساب',bad:'لم يُسدِّد ولم يُفعّل'}};
+            both:{name:'لم يُسدِّد ولم يُفعِّل',teamsL:'جهات لم تُسدِّد ولم تُفعِّل الحساب',bad:'لم يُسدِّد ولم يُفعّل'},
+            either:{name:'لم يُسدِّد أو لم يُفعِّل',teamsL:'جهات لم تُسدِّد أو لم تُفعِّل الحساب',bad:'لم يُسدِّد أو لم يُفعّل'}};
 let curMet='pay', curRegion='الكل', curStat='all';
 const STAT=[['all','كل المجموعات'],['drop','ستُلغى (تخرج من الاكتمال)'],['keep','تبقى مكتملة']];
 
