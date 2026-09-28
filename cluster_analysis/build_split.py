@@ -54,6 +54,14 @@ HTML = r"""<!DOCTYPE html>
  .cnames .varyx{color:#ffcf6b;font-size:11px;font-weight:700}
  .agc{font-size:10.5px;color:#7f97b3;margin:-2px 78px 8px 66px;line-height:1.5}
  .muted{color:#9fb6d0;font-size:12px}
+ .sumcard{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:14px 16px;margin:0 0 16px}
+ .sumcard h3{margin:0 0 12px;font-size:15px;color:#ffd166}
+ .sbar{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+ .sbar .sn{width:62px;flex-shrink:0;font-weight:700}
+ .sbar .track{flex:1;background:#0b1c30;border-radius:6px;height:20px;overflow:hidden}
+ .sbar .fill{height:100%;background:linear-gradient(90deg,#1b6ca8,#3aa0e0);border-radius:6px;min-width:3px}
+ .sbar .sv{width:180px;text-align:left;font-weight:800;color:#ffd166;white-space:nowrap}
+ .sbar .sv .g{color:#8fb3cf;font-weight:400;font-size:12px}
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()">
@@ -64,6 +72,7 @@ HTML = r"""<!DOCTYPE html>
  <div style="color:#8fdcb4;font-size:12.5px;margin:-4px 0 8px">💡 تقدر تختار أكثر من فئة — تُجمع الأرقام لها تلقائيًا.</div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
  <div class="kpis" id="kpis"></div>
+ <div id="catsum"></div>
  <div id="content"></div>
 </div>
 <script>
@@ -123,6 +132,16 @@ function curData(){
   if(a.length===1) return (S.byAge[a[0]]||[]).slice();   // فئة واحدة: عرض المدن
   return aggData(a);                                      // عدة فئات: تجميع
 }
+// ملخص كل فئة: عدد الفرق والمجموعات المكتملة (يراعي فلتر المنطقة) — مثل صفحتي المباريات واللاعبين
+function catRows(){
+  return selArr().map(a=>{
+    let teams=0,groups=0;
+    (S.byAge[a]||[]).forEach(g=>{
+      if(g.total>=TARGET && (curRegion==='الكل'||g.region===curRegion)){teams+=g.total;groups++;}
+    });
+    return {age:a,teams:teams,groups:groups};
+  });
+}
 function regionOptions(){
   const isAll=multiSel();
   const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
@@ -155,6 +174,15 @@ function render(){
     '<div class="kpi"><div class="n" style="color:#7ee0a0">'+done+'</div><div class="l">'+(isAll?'مكتملة في كل الفئات المختارة':'مجموعات مكتملة')+'</div></div>'+
     '<div class="kpi"><div class="n">'+totTeams+'</div><div class="l">مجموع الفِرَق</div></div>'+
     '<div class="kpi"><div class="n">'+cities.size+'</div><div class="l">عدد المدن</div></div>';
+  // ملخص كل فئة (عند اختيار أكثر من فئة)
+  const csEl=document.getElementById('catsum');
+  if(isAll){
+    const rows=catRows(); const mx=Math.max(1,...rows.map(r=>r.teams));
+    csEl.innerHTML='<div class="sumcard"><h3>📊 ملخص كل فئة'+(curRegion!=='الكل'?' — '+curRegion:'')+'</h3>'+
+      rows.map(r=>'<div class="sbar"><div class="sn">'+r.age+'</div>'+
+        '<div class="track"><div class="fill" style="width:'+(r.teams/mx*100)+'%"></div></div>'+
+        '<div class="sv">'+nTeam(r.teams)+' <span class="g">· '+nGroup(r.groups)+' مكتملة</span></div></div>').join('')+'</div>';
+  } else csEl.innerHTML='';
   // تجميع حسب المنطقة
   const R={},order=[];
   arr.forEach(g=>{if(!R[g.region]){R[g.region]=[];order.push(g.region);}R[g.region].push(g);});
