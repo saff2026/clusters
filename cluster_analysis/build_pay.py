@@ -269,12 +269,11 @@ function render(){
   const dropN=impact.filter(x=>x.drop).length;
   const compAfter=compBefore-dropN;
 
-  // KPIs
+  // KPIs (بالترتيب: مجموعات ستُلغى ← جهات ← فرق ستُحذف)
   document.getElementById('kpis').innerHTML=
-    '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (تخرج من الاكتمال)</div></div>'+
-    '<div class="kpi good"><div class="n">'+compAfter+'</div><div class="l">مجموعات تبقى مكتملة (من '+compBefore+')</div></div>'+
-    '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div></div>'+
-    '<div class="kpi"><div class="n">'+removedFromComplete+'</div><div class="l">فرق تُحذف من مجموعات مكتملة (عبر الفئات)</div></div>';
+    '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (من '+compBefore+' مكتملة)</div></div>'+
+    '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+' ('+entSel+' فريقًا عبر الفئات)</div></div>'+
+    '<div class="kpi bad"><div class="n">'+removedFromComplete+'</div><div class="l">فرق ستُحذف من مجموعات مكتملة (عبر الفئات)</div></div>';
 
   // ترشيح حسب الحالة
   let rows=impact.slice();
