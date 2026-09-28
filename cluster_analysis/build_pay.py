@@ -174,6 +174,7 @@ HTML = r"""<!DOCTYPE html>
  .kpi{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:16px 20px;flex:1;min-width:170px;text-align:center}
  .kpi .n{font-size:30px;font-weight:800;color:#ffd166;line-height:1.1}
  .kpi .l{font-size:12.5px;color:#9fb6d0;margin-top:4px}
+ .kpi .p{display:inline-block;font-size:13px;font-weight:800;color:#e9eef5;background:#0b1c30;border-radius:8px;padding:2px 10px;margin-top:7px}
  .kpi.warn .n{color:#ff9a9a} .kpi.bad .n{color:#e0483d} .kpi.good .n{color:#7ee0a0}
  .sec{color:#ffd166;font-weight:800;font-size:16px;margin:22px 2px 10px}
  .card{background:#12283f;border:1px solid #1c3a5e;border-radius:12px;padding:14px 16px;margin:10px 0}
@@ -181,7 +182,7 @@ HTML = r"""<!DOCTYPE html>
  .rbar .rn{width:150px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
  .rbar .track{flex:1;background:#0b1c30;border-radius:6px;height:20px;overflow:hidden}
  .rbar .fill{height:100%;background:linear-gradient(90deg,#c0392b,#e0483d);border-radius:6px;min-width:3px}
- .rbar .v{width:170px;text-align:left;font-weight:800;color:#ffd166;white-space:nowrap}
+ .rbar .v{width:210px;text-align:left;font-weight:800;color:#ffd166;white-space:nowrap}
  table.gt{width:100%;border-collapse:collapse;font-size:13px}
  table.gt th,table.gt td{padding:8px 10px;text-align:right;border-bottom:1px solid #1c3a5e}
  table.gt th{color:#9fb6d0;font-size:12px;font-weight:700;position:sticky;top:74px;background:#0f2136}
@@ -271,11 +272,17 @@ function render(){
   const dropN=impact.filter(x=>x.drop).length;
   const compAfter=compBefore-dropN;
 
+  // النِّسَب
+  const pct=(a,b)=>b?Math.round(a/b*100):0;
+  const pctDrop=pct(dropN,compBefore);                 // من المجموعات المكتملة
+  const pctJ=pct(teamsSel,P.amateurTeams);             // من جهات الهواة
+  const pctEnt=pct(entSel,P.totalEntries);             // من كل الفرق
+
   // KPIs (بالترتيب: مجموعات ستُلغى ← جهات ← فرق ستُحذف)
   document.getElementById('kpis').innerHTML=
-    '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (من '+compBefore+' مكتملة)</div></div>'+
-    '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div></div>'+
-    '<div class="kpi bad"><div class="n">'+entSel+'</div><div class="l">إجمالي الفرق التي ستُحذف (عبر كل الفئات)</div></div>';
+    '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (من '+compBefore+' مكتملة)</div><div class="p">'+pctDrop+'% من المكتملة</div></div>'+
+    '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div><div class="p">'+pctJ+'% من جهات الهواة ('+P.amateurTeams+')</div></div>'+
+    '<div class="kpi bad"><div class="n">'+entSel+'</div><div class="l">إجمالي الفرق التي ستُحذف (عبر كل الفئات)</div><div class="p">'+pctEnt+'% من كل الفرق ('+P.totalEntries+')</div></div>';
 
   // ترشيح حسب الحالة
   let rows=impact.slice();
@@ -310,10 +317,10 @@ function render(){
   html+='<div class="card">';
   if(regList.length===0)html+='<div class="muted">لا توجد جهات مطابقة.</div>';
   regList.forEach(r=>{
-    const t=brT[r]||0,e=brE[r]||0;
+    const t=brT[r]||0,e=brE[r]||0,sh=teamsSel?Math.round(t/teamsSel*100):0;
     html+='<div class="rbar"><div class="rn">'+r.replace(/^منطقة /,'')+'</div>'+
       '<div class="track"><div class="fill" style="width:'+(t/maxT*100)+'%"></div></div>'+
-      '<div class="v">'+nEntity(t)+'<span style="color:#8fb3cf;font-weight:400"> · '+e+' فريق</span></div></div>';
+      '<div class="v">'+nEntity(t)+' <span style="color:#ffd166">('+sh+'%)</span><span style="color:#8fb3cf;font-weight:400"> · '+e+' فريق</span></div></div>';
   });
   html+='</div>';
 
