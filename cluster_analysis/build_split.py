@@ -88,8 +88,8 @@ function ageTabs(){
     S.ages.map(a=>'<button class="tab'+(selAges.has(a)?' on':'')+'" data-a="'+a+'">'+a+'</button>').join('');
   el.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
     const a=b.dataset.a;
-    if(a==='__ALL__'){selAges=new Set(S.ages);}
-    else{if(selAges.has(a))selAges.delete(a); else selAges.add(a); if(selAges.size===0)selAges=new Set(S.ages);}
+    if(a==='__ALL__'){selAges = isAllSel()? new Set() : new Set(S.ages);}  // زر «جميع الفئات» يعمل كمفتاح: تحديد الكل أو إزالته
+    else{if(selAges.has(a))selAges.delete(a); else selAges.add(a);}         // يُسمح بإزالة كل الفئات
     render();
   });
 }
@@ -136,6 +136,11 @@ function regionOptions(){
 function render(){
   ageTabs(); regionOptions();
   const statEl=document.getElementById('statT');if(statEl)statEl.innerHTML='';
+  if(selArr().length===0){   // لا فئات مختارة
+    document.getElementById('kpis').innerHTML='';
+    document.getElementById('content').innerHTML='<div class="muted" style="padding:24px;text-align:center;font-size:14px">اختر فئة واحدة على الأقل لعرض البيانات — أو اضغط «جميع الفئات».</div>';
+    return;
+  }
   const isAll=multiSel();
   const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
   // لا تُحسب المجموعات غير المكتملة (أقل من ٦ فرق؛ وفي عدة فئات = مكتملة في فئة واحدة على الأقل)

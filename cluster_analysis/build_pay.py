@@ -201,7 +201,7 @@ HTML = r"""<!DOCTYPE html>
 <div class="wrap">
  <div class="note" style="background:#12283f;border:1px solid #1c3a5e;border-radius:10px;padding:10px 14px;margin:0 0 14px;line-height:1.9">ℹ️ خاص بـ<b>الهواة</b> فقط (الأندية والأكاديميات تُعتبر مسدِّدة ومفعِّلة).<br>📌 <b>الجهة</b> = المُسجِّل (نادٍ/أكاديمية/هواة)، وقد تُشارك بعدّة <b>فرق</b> في عدّة فئات. <b>الفريق</b> = مشاركة في فئة واحدة، وهو وحدة المجموعة (المطلوب ٦ فرق لكل مجموعة).</div>
  <div class="flt"><div class="lab">اختر الحالة (تُحاكى فورًا: إلغاء هذه الفرق):</div><div class="tabs" id="metT"></div></div>
- <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
+ <div class="flt" style="display:flex;gap:22px;flex-wrap:wrap"><div><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div><div><div class="lab">الفئة:</div><select class="rgn" id="age"></select></div></div>
  <div class="flt"><div class="lab">عرض المجموعات:</div><div class="tabs" id="statT"></div></div>
  <div class="simsub" id="simsub"></div>
  <div class="kpis" id="kpis"></div>
@@ -214,7 +214,7 @@ const META={pay:{name:'حالة السداد',teamsL:'جهات لم تُسدِّ
             acct:{name:'تفعيل الحساب',teamsL:'جهات لم تُفعِّل الحساب',bad:'لم يُفعّل الحساب'},
             both:{name:'لم يُسدِّد ولم يُفعِّل',teamsL:'جهات لم تُسدِّد ولم تُفعِّل الحساب',bad:'لم يُسدِّد ولم يُفعّل'},
             either:{name:'لم يُسدِّد أو لم يُفعِّل',teamsL:'جهات لم تُسدِّد أو لم تُفعِّل الحساب',bad:'لم يُسدِّد أو لم يُفعّل'}};
-let curMet='pay', curRegion='الكل', curStat='all';
+let curMet='pay', curRegion='الكل', curAge='الكل', curStat='all';
 const STAT=[['all','كل المجموعات'],['drop','ستُلغى (تخرج من الاكتمال)'],['keep','تبقى مكتملة']];
 
 function arCount(n,one,two,few,many){const m=n%100;
@@ -241,12 +241,19 @@ function regionOptions(){
   sel.innerHTML='<option value="الكل">كل المناطق</option>'+regs.map(r=>'<option'+(r===curRegion?' selected':'')+'>'+r+'</option>').join('');
   sel.onchange=()=>{curRegion=sel.value;render();};
 }
-// المجموعات ضمن المنطقة المختارة
+function ageOptions(){
+  const sel=document.getElementById('age');
+  if(curAge!=='الكل'&&!P.ages.includes(curAge))curAge='الكل';
+  sel.innerHTML='<option value="الكل">كل الفئات</option>'+P.ages.map(a=>'<option'+(a===curAge?' selected':'')+'>'+a+'</option>').join('');
+  sel.onchange=()=>{curAge=sel.value;render();};
+}
+// المجموعات ضمن المنطقة والفئة المختارتين
 function groupsInScope(){
-  return Object.entries(P.groups).filter(([id,g])=>curRegion==='الكل'||g.region===curRegion);
+  return Object.entries(P.groups).filter(([id,g])=>
+    (curRegion==='الكل'||g.region===curRegion)&&(curAge==='الكل'||g.age===curAge));
 }
 function render(){
-  metTabs(); statTabs(); regionOptions();
+  metTabs(); statTabs(); regionOptions(); ageOptions();
   const m=P.metrics[curMet], meta=META[curMet];
 
   // توزيع على المناطق (عدد الجهات) + المشاركات (فرق عبر الفئات)
@@ -276,13 +283,15 @@ function render(){
   const pct=(a,b)=>b?Math.round(a/b*100):0;
   const pctDrop=pct(dropN,compBefore);                 // من المجموعات المكتملة
   const pctJ=pct(teamsSel,P.amateurTeams);             // من جهات الهواة
-  const pctEnt=pct(entSel,P.totalEntries);             // من كل الفرق
+  const pctEnt=pct(removedFromComplete,P.totalEntries);// من كل الفرق
+  const allAges=(curAge==='الكل');
+  const teamsLbl=allAges?'إجمالي الفرق التي ستُحذف (عبر كل الفئات)':('فرق ستُحذف في '+curAge);
 
   // KPIs (بالترتيب: مجموعات ستُلغى ← جهات ← فرق ستُحذف)
   document.getElementById('kpis').innerHTML=
-    '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (من '+compBefore+' مكتملة)</div><div class="p">'+pctDrop+'% من المكتملة</div></div>'+
+    '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (من '+compBefore+' مكتملة'+(allAges?'':' في '+curAge)+')</div><div class="p">'+pctDrop+'% من المكتملة</div></div>'+
     '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div><div class="p">'+pctJ+'% من جهات الهواة ('+P.amateurTeams+')</div></div>'+
-    '<div class="kpi bad"><div class="n">'+entSel+'</div><div class="l">إجمالي الفرق التي ستُحذف (عبر كل الفئات)</div><div class="p">'+pctEnt+'% من كل الفرق ('+P.totalEntries+')</div></div>';
+    '<div class="kpi bad"><div class="n">'+removedFromComplete+'</div><div class="l">'+teamsLbl+'</div><div class="p">'+pctEnt+'% من كل الفرق ('+P.totalEntries+')</div></div>';
 
   // ترشيح حسب الحالة
   let rows=impact.slice();
@@ -293,7 +302,7 @@ function render(){
 
   let html='';
   const secTitle=curStat==='drop'?'🧩 المجموعات التي ستُلغى':curStat==='keep'?'🧩 المجموعات التي تبقى مكتملة':'🧩 الأثر على كل المجموعات المكتملة';
-  html+='<div class="sec">'+secTitle+' ('+nGroup(rows.length)+')</div>';
+  html+='<div class="sec">'+secTitle+(allAges?'':' — '+curAge)+' ('+nGroup(rows.length)+')</div>';
   if(rows.length===0){
     html+='<div class="card muted">لا توجد مجموعات ضمن هذا النطاق.</div>';
   }else{
