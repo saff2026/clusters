@@ -8,6 +8,7 @@ NAV_ITEMS = [
     ("map",       "🗺️ الخريطة",           "map.html"),
     ("dashboard", "📊 لوحة الفرق",        "dashboard.html"),
     ("split",     "🧩 التقسيم",           "split.html"),
+    ("pay",       "💳 السداد والتفعيل",    "pay.html"),
     ("mp",        "⚽ المباريات واللاعبون", "matches.html"),
     ("schedules", "🗓️ الجداول",           "schedules.html"),
 ]
