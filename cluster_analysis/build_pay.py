@@ -180,7 +180,7 @@ HTML = r"""<!DOCTYPE html>
  .rbar .rn{width:150px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
  .rbar .track{flex:1;background:#0b1c30;border-radius:6px;height:20px;overflow:hidden}
  .rbar .fill{height:100%;background:linear-gradient(90deg,#c0392b,#e0483d);border-radius:6px;min-width:3px}
- .rbar .v{width:90px;text-align:center;font-weight:800;color:#ffd166}
+ .rbar .v{width:170px;text-align:left;font-weight:800;color:#ffd166;white-space:nowrap}
  table.gt{width:100%;border-collapse:collapse;font-size:13px}
  table.gt th,table.gt td{padding:8px 10px;text-align:right;border-bottom:1px solid #1c3a5e}
  table.gt th{color:#9fb6d0;font-size:12px;font-weight:700;position:sticky;top:74px;background:#0f2136}
@@ -197,7 +197,7 @@ HTML = r"""<!DOCTYPE html>
  <h1>💳 حالة سداد وتفعيل حسابات الفرق</h1>
 </div>
 <div class="wrap">
- <div class="note" style="background:#12283f;border:1px solid #1c3a5e;border-radius:10px;padding:10px 14px;margin:0 0 14px">ℹ️ هذا التحليل خاص بفرق <b>الهواة</b> فقط — الأندية والأكاديميات تُعتبر مسدِّدة ومفعِّلة الحساب.</div>
+ <div class="note" style="background:#12283f;border:1px solid #1c3a5e;border-radius:10px;padding:10px 14px;margin:0 0 14px;line-height:1.9">ℹ️ خاص بـ<b>الهواة</b> فقط (الأندية والأكاديميات تُعتبر مسدِّدة ومفعِّلة).<br>📌 <b>الجهة</b> = المُسجِّل (نادٍ/أكاديمية/هواة)، وقد تُشارك بعدّة <b>فرق</b> في عدّة فئات. <b>الفريق</b> = مشاركة في فئة واحدة، وهو وحدة المجموعة (المطلوب ٦ فرق لكل مجموعة).</div>
  <div class="flt"><div class="lab">اختر الحالة (تُحاكى فورًا: إلغاء هذه الفرق):</div><div class="tabs" id="metT"></div></div>
  <div class="flt"><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div>
  <div class="flt"><div class="lab">عرض المجموعات:</div><div class="tabs" id="statT"></div></div>
@@ -208,9 +208,9 @@ HTML = r"""<!DOCTYPE html>
 <script>
 const P=__PAY__;
 const T=P.target;
-const META={pay:{name:'حالة السداد',teamsL:'فرق لم تُسدِّد',simTxt:'محاكاة: ألغِ الفرق التي لم تُسدِّد',bad:'لم يتم السداد'},
-            acct:{name:'تفعيل الحساب',teamsL:'فرق لم تُفعِّل الحساب',simTxt:'محاكاة: ألغِ الفرق التي لم تُفعِّل حساب تسجيل اللاعبين',bad:'لم يُفعّل الحساب'},
-            both:{name:'لم يُسدِّد ولم يُفعِّل',teamsL:'فرق لم تُسدِّد ولم تُفعِّل الحساب',simTxt:'محاكاة: ألغِ الفرق التي لم تُسدِّد ولم تُفعِّل الحساب معًا',bad:'لم يُسدِّد ولم يُفعّل'}};
+const META={pay:{name:'حالة السداد',teamsL:'جهات لم تُسدِّد',bad:'لم يتم السداد'},
+            acct:{name:'تفعيل الحساب',teamsL:'جهات لم تُفعِّل الحساب',bad:'لم يُفعّل الحساب'},
+            both:{name:'لم يُسدِّد ولم يُفعِّل',teamsL:'جهات لم تُسدِّد ولم تُفعِّل الحساب',bad:'لم يُسدِّد ولم يُفعّل'}};
 let curMet='pay', curRegion='الكل', curStat='all';
 const STAT=[['all','كل المجموعات'],['drop','ستُلغى (تخرج من الاكتمال)'],['keep','تبقى مكتملة']];
 
@@ -218,6 +218,7 @@ function arCount(n,one,two,few,many){const m=n%100;
   if(n===1)return one; if(n===2)return two;
   if(m>=3&&m<=10)return n+' '+few; return n+' '+many;}
 function nTeam(n){return arCount(n,'فريق واحد','فريقان','فرق','فريقًا');}
+function nEntity(n){return arCount(n,'جهة واحدة','جهتان','جهات','جهة');}
 function nGroup(n){return arCount(n,'مجموعة واحدة','مجموعتان','مجموعات','مجموعة');}
 
 function metTabs(){
@@ -244,14 +245,15 @@ function groupsInScope(){
 function render(){
   metTabs(); statTabs(); regionOptions();
   const m=P.metrics[curMet], meta=META[curMet];
-  document.getElementById('simsub').textContent='محاكاة فورية: تُطرح '+meta.teamsL+' من مجموعاتها، ويظهر الأثر على كل مجموعة مكتملة (المطلوب '+T+' فرق) — أيّها ستُلغى وأيّها تبقى.';
 
-  // توزيع على المناطق (عدد الفرق)
-  const brT=m.byRegionTeams;
+  // توزيع على المناطق (عدد الجهات) + المشاركات (فرق عبر الفئات)
+  const brT=m.byRegionTeams, brE=m.byRegionEntries;
   let regList=Object.keys(brT);
   if(curRegion!=='الكل')regList=regList.filter(r=>r===curRegion);
   regList.sort((a,b)=>(brT[b]||0)-(brT[a]||0));
   const teamsSel=regList.reduce((s,r)=>s+(brT[r]||0),0);
+  const entSel=regList.reduce((s,r)=>s+(brE[r]||0),0);
+  document.getElementById('simsub').textContent='محاكاة فورية: عند إلغاء '+nEntity(teamsSel)+' ('+nTeam(entSel)+' عبر الفئات)، يُعاد حساب اكتمال كل مجموعة (المطلوب '+T+' فرق) — أيّها ستُلغى وأيّها تبقى.';
 
   // الأثر على كل مجموعة مكتملة ضمن النطاق
   const scope=groupsInScope();
@@ -272,7 +274,7 @@ function render(){
     '<div class="kpi bad"><div class="n">'+dropN+'</div><div class="l">مجموعات ستُلغى (تخرج من الاكتمال)</div></div>'+
     '<div class="kpi good"><div class="n">'+compAfter+'</div><div class="l">مجموعات تبقى مكتملة (من '+compBefore+')</div></div>'+
     '<div class="kpi warn"><div class="n">'+teamsSel+'</div><div class="l">'+meta.teamsL+'</div></div>'+
-    '<div class="kpi"><div class="n">'+removedFromComplete+'</div><div class="l">فرق تُحذف من مجموعات مكتملة</div></div>';
+    '<div class="kpi"><div class="n">'+removedFromComplete+'</div><div class="l">فرق تُحذف من مجموعات مكتملة (عبر الفئات)</div></div>';
 
   // ترشيح حسب الحالة
   let rows=impact.slice();
@@ -301,16 +303,16 @@ function render(){
     html+='</tbody></table></div>';
   }
 
-  // قسم التوزيع على المناطق
+  // قسم التوزيع على المناطق (جهات، مع عدد الفرق عبر الفئات)
   html+='<div class="sec">📍 توزيع '+meta.teamsL+' على المناطق</div>';
   const maxT=Math.max(1,...regList.map(r=>brT[r]||0));
   html+='<div class="card">';
-  if(regList.length===0)html+='<div class="muted">لا توجد فرق مطابقة.</div>';
+  if(regList.length===0)html+='<div class="muted">لا توجد جهات مطابقة.</div>';
   regList.forEach(r=>{
-    const t=brT[r]||0;
+    const t=brT[r]||0,e=brE[r]||0;
     html+='<div class="rbar"><div class="rn">'+r.replace(/^منطقة /,'')+'</div>'+
       '<div class="track"><div class="fill" style="width:'+(t/maxT*100)+'%"></div></div>'+
-      '<div class="v">'+nTeam(t)+'</div></div>';
+      '<div class="v">'+nEntity(t)+'<span style="color:#8fb3cf;font-weight:400"> · '+e+' فريق</span></div></div>';
   });
   html+='</div>';
 
