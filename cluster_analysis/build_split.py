@@ -143,7 +143,7 @@ function render(){
   }
   const isAll=multiSel();
   const isDone=g=>isAll?g.allDone:(g.total>=TARGET);
-  // لا تُحسب المجموعات غير المكتملة (أقل من ٦ فرق؛ وفي عدة فئات = مكتملة في فئة واحدة على الأقل)
+  // لا تُحسب المجموعات غير المكتملة (أقل من ٥ فرق؛ وفي عدة فئات = مكتملة في فئة واحدة على الأقل)
   const keep=g=>isAll?(g.doneAges>=1):(g.total>=TARGET);
   let arr=curData().filter(keep);
   if(curRegion!=='الكل')arr=arr.filter(g=>g.region===curRegion);

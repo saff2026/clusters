@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """يبني صفحة «حالة سداد وتفعيل حسابات الفرق» (pay.html).
 لكل معيار (السداد / تفعيل الحساب): عدد الفرق غير المطابقة وتوزيعها على المناطق،
-ومحاكاة: لو أُلغيت هذه الفرق، كم مجموعة تخرج من الاكتمال (أقل من ٦ فرق) وكم فريقًا يُفقد.
+ومحاكاة: لو أُلغيت هذه الفرق، كم مجموعة تخرج من الاكتمال (أقل من ٥ فرق) وكم فريقًا يُفقد.
 المصدر: «بيانات التسجيل» + «عدد الفرق لكل مدينة» + «المدخلات» من نفس الملف.
 الاستخدام: python3 build_pay.py <ملف.xlsx>"""
 import sys, json, openpyxl
@@ -13,7 +13,7 @@ XLSX = sys.argv[1] if len(sys.argv) > 1 else BASE + "pay_latest.xlsx"
 CANON = {"جيزان": "جازان", "الجوف": "سكاكا", "ابها": "أبها"}
 SIFA = {"هواة": "هواة", "اكاديمية": "أكاديمية", "اكاديمة": "أكاديمية",
         "أكاديمية": "أكاديمية", "نادي": "نادي", "نالدي خاص": "نادي"}
-TARGET = 6
+TARGET = 5
 
 M = json.load(open(BASE + "_maps.json", encoding="utf-8"))
 REG = dict(M["REG"])          # مدينة -> منطقة (اسم رسمي)
@@ -199,7 +199,7 @@ HTML = r"""<!DOCTYPE html>
  <h1>💳 حالة سداد وتفعيل حسابات الفرق</h1>
 </div>
 <div class="wrap">
- <div class="note" style="background:#12283f;border:1px solid #1c3a5e;border-radius:10px;padding:10px 14px;margin:0 0 14px;line-height:1.9">ℹ️ خاص بـ<b>الهواة</b> فقط (الأندية والأكاديميات تُعتبر مسدِّدة ومفعِّلة).<br>📌 <b>الجهة</b> = المُسجِّل (نادٍ/أكاديمية/هواة)، وقد تُشارك بعدّة <b>فرق</b> في عدّة فئات. <b>الفريق</b> = مشاركة في فئة واحدة، وهو وحدة المجموعة (المطلوب ٦ فرق لكل مجموعة).</div>
+ <div class="note" style="background:#12283f;border:1px solid #1c3a5e;border-radius:10px;padding:10px 14px;margin:0 0 14px;line-height:1.9">ℹ️ خاص بـ<b>الهواة</b> فقط (الأندية والأكاديميات تُعتبر مسدِّدة ومفعِّلة).<br>📌 <b>الجهة</b> = المُسجِّل (نادٍ/أكاديمية/هواة)، وقد تُشارك بعدّة <b>فرق</b> في عدّة فئات. <b>الفريق</b> = مشاركة في فئة واحدة، وهو وحدة المجموعة (الحد الأدنى ٥ فرق لكل مجموعة).</div>
  <div class="flt"><div class="lab">اختر الحالة (تُحاكى فورًا: إلغاء هذه الفرق):</div><div class="tabs" id="metT"></div></div>
  <div class="flt" style="display:flex;gap:22px;flex-wrap:wrap"><div><div class="lab">المنطقة:</div><select class="rgn" id="rgn"></select></div><div><div class="lab">الفئة:</div><select class="rgn" id="age"></select></div></div>
  <div class="flt"><div class="lab">عرض المجموعات:</div><div class="tabs" id="statT"></div></div>

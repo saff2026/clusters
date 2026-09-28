@@ -148,7 +148,7 @@ if os.path.exists(_egp):
     _an = lambda a: (int(re.search(r"\d+", a).group()) if re.search(r"\d+", a) else 0)
     _RANGE_AGES = {"5-9":   [a for a in _CC if _an(a) <= 9],
                    "11-14": [a for a in _CC if _an(a) >= 11]}
-    _EX_TARGET = 6
+    _EX_TARGET = 5
 
     def build_dataset_excel(groups, rng):
         ages_r = _RANGE_AGES.get(rng, [])
@@ -182,7 +182,7 @@ P = [{"n": n, "lat": v["lat"], "lon": v["lon"], "region": v["region"],
       "cat": v["cat"]} for n, v in points.items()]
 
 # ===== اكتمال المجموعات: عدد الفرق لكل مدينة لكل فئة (من الإكسل عبر teams2.json) =====
-# مجموعة «مكتملة» = بلغت الهدف (٦ فرق) في كل فئات نطاقها. الحساب بالمدن ليعمل مع أي
+# مجموعة «مكتملة» = بلغت الهدف (٥ فرق) في كل فئات نطاقها. الحساب بالمدن ليعمل مع أي
 # خيار تجميع أو تعديل يدوي، ومطابقًا لتعريف «المكتملة» في صفحة التقسيم.
 CITY_COUNTS = {}          # فئة -> مدينة -> عدد الفرق
 _TARGET = 6
@@ -489,7 +489,7 @@ function lockToast(){const el=document.getElementById('estat');
 let onlyComplete=false;
 const TARGET=DATA.target||6;
 // الاكتمال يُقاس على «كل الفئات السبع» (تحت 5 حتى تحت 14): المجموعة مكتملة إذا بلغت
-// الهدف (٦ فرق) في فئة واحدة على الأقل من الفئات السبع.
+// الهدف (٥ فرق) في فئة واحدة على الأقل من الفئات السبع.
 function rangeAges(){return (DATA.ranges&&DATA.ranges[ageOf(curKey)])||[];}
 function compAges(){return DATA.allAges||[];}
 function clusterAgeTotal(cities,age){const cc=(DATA.cityCounts&&DATA.cityCounts[age])||{};

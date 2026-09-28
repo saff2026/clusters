@@ -127,7 +127,7 @@ rows_out = [{"age": a, "city": c, "group": g, "region": rg, "sifa": s, "office":
 ages.sort(key=lambda x: int("".join(ch for ch in x if ch.isdigit())))
 teams = {"rows": rows_out, "ages": ages,
          "sifas": [s for s in ["هواة", "نادي", "أكاديمية"] if s in sifset],
-         "offices": sorted(offset), "regions": M["regions"], "target": 6}
+         "offices": sorted(offset), "regions": M["regions"], "target": 5}
 json.dump(teams, open(BASE + "teams2.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
 
 # ========== 3) خيار الخريطة «اكسل» (تجميع المدن لكل فئة) ==========
