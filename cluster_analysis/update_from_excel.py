@@ -187,7 +187,7 @@ if "عدد المباريات" in wb.sheetnames:
         if not r:
             continue
         age, grp = cell_str(r, ca), cell_str(r, cg)
-        if age and grp:
+        if age and grp and "REF" not in age and "REF" not in grp:   # تجاهل صفوف #REF! المعطوبة
             matches_data[age + "|" + grp] = {"n": cell_num(r, cn), "m": cell_num(r, cm)}
 json.dump(matches_data, open(BASE + "matches_data.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=0)
@@ -202,7 +202,7 @@ if "عدد اللاعبين" in wb.sheetnames:
         if not r:
             continue
         age, grp = cell_str(r, ca), cell_str(r, cg)
-        if age and grp:
+        if age and grp and "REF" not in age and "REF" not in grp:   # تجاهل صفوف #REF! المعطوبة
             players_data[age + "|" + grp] = {"n": cell_num(r, cn), "p": cell_num(r, cp)}
 json.dump(players_data, open(BASE + "players_data.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=0)
