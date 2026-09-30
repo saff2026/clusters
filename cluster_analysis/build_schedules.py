@@ -38,10 +38,12 @@ for key, label, srcf, grpf in AGES:
     groups = []
     for g in G["groups"]:
         teams = [t["name"] for t in g["teams"]]
+        cities = [t.get("city", "") for t in g["teams"]]
         size = len(teams)
         pi = pmap.get(g["group"], {})
         groups.append({"group": g["group"], "region": g.get("region", ""),
-                       "teams": teams, "size": size, "tmpl": size if size in avail else None,
+                       "teams": teams, "cities": cities, "size": size,
+                       "tmpl": size if size in avail else None,
                        "pitches": pi.get("pitches", 0), "pday": pi.get("day", ""),
                        "pmatches": pi.get("matchesDay", 0)})
     ages.append({"key": key, "label": label, "settings": src["settings"],
@@ -77,7 +79,16 @@ HTML = r"""<!DOCTYPE html>
 .roster{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px}
 .rteam{background:#0d3f2d;border:1px solid #1c6b49;border-radius:8px;padding:5px 10px;font-size:12.5px}
 .rteam b{color:#ffd166;margin-left:5px}
-.subttl{color:#ffd166;font-weight:800;font-size:14px;margin:12px 0 4px}
+table.rtbl{width:100%;max-width:640px;border-collapse:collapse;font-size:13px;margin:6px 0 16px}
+table.rtbl th{background:#0d4b32;color:#cdeede;font-weight:700;font-size:12px;padding:7px 10px;text-align:right;border:1px solid #14543a}
+table.rtbl td{padding:7px 10px;border:1px solid #123f2b;background:#0a2418;text-align:right}
+table.rtbl tr:nth-child(even) td{background:#0c2c1d}
+table.rtbl tr:hover td{background:#123f2b}
+table.rtbl td.rnum{width:44px;text-align:center;color:#ffd166;font-weight:800;background:#0d3f2d}
+table.rtbl td.rname{font-weight:700}
+table.rtbl td.rcity{color:#8fdcb4;width:130px}
+.subttl{color:#04150e;background:#ffd166;font-weight:800;font-size:13px;margin:16px 0 2px;
+ display:inline-block;padding:3px 12px;border-radius:8px}
 h3.sec{color:#ffd166;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #14543a;padding-bottom:5px}
 .dayttl{color:#eafff3;font-weight:800;font-size:13px;margin:14px 0 6px;background:#0d4b32;border:1px solid #1c7a52;border-radius:8px;padding:5px 12px;display:inline-block}
 table{border-collapse:collapse;width:100%;font-size:12.5px;margin-bottom:6px}
@@ -116,6 +127,13 @@ function nPitch(n){return arCount(n,'ملعب واحد','ملعبان','ملاع
 function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function dayNum(d){return String(d).replace(/^\s*اليوم\s*/,'');}
 function subLabelOf(subs,num){for(const s of subs){if(s.teams.indexOf(num)>=0)return s.label;}return '';}
+function rosterTable(nums,teams,cities){
+  const list=nums||teams.map((_,i)=>i+1);
+  let h='<div class="stbl"><table class="rtbl"><thead><tr><th class="rnum">#</th><th>الفريق</th><th>المدينة</th></tr></thead><tbody>';
+  list.forEach(n=>{h+='<tr><td class="rnum">'+n+'</td><td class="rname">'+esc(teams[n-1]||('#'+n))+
+    '</td><td class="rcity">'+esc((cities&&cities[n-1])||'')+'</td></tr>';});
+  return h+'</tbody></table></div>';
+}
 function cellHTML(cell,teams){
   const m=cell.match(/^(\d+)\s*ضد\s*(\d+)$/);
   if(m&&teams){const a=teams[+m[1]-1]||('#'+m[1]),b=teams[+m[2]-1]||('#'+m[2]);
@@ -183,12 +201,12 @@ function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])
   '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
   document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
 function groupsPanel(){
-  const TARGET=6;
+  const TARGET=5;
   const all=A().groups;
-  // المكتملة = ٦ فرق فأكثر
+  // المكتملة = ٥ فرق فأكثر
   const complete=i=>all[i].size>=TARGET;
   const regions=[...new Set(all.filter((g,i)=>complete(i)).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
-  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٦ فرق فأكثر) فقط.</div>';
+  let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٥ فرق فأكثر) فقط.</div>';
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
@@ -204,8 +222,10 @@ function groupsPanel(){
       const tmpl=A().templates[String(g.tmpl)];const subs=tmpl.subgroups||[];
       if(subs.length>1){
         h+='<div class="hint">هذه المجموعة مقسّمة إلى '+subs.length+' مجموعات فرعية، تلعب كل واحدة على ملاعبها:</div>';
-        subs.forEach(sg=>{h+='<div class="subttl">المجموعة '+sg.label+'</div><div class="roster">'+
-          sg.teams.map(n=>'<span class="rteam"><b>'+n+'</b>'+esc(g.teams[n-1]||('#'+n))+'</span>').join('')+'</div>';});
+        subs.forEach(sg=>{h+='<div class="subttl">المجموعة '+sg.label+' — '+nTeam(sg.teams.length)+'</div>'+
+          rosterTable(sg.teams,g.teams,g.cities);});
+      }else{
+        h+='<div class="subttl">فرق المجموعة</div>'+rosterTable(null,g.teams,g.cities);
       }
       h+='<div class="hint">اختر فريقًا لعرض مبارياته فقط، أو «الجدول الكامل» للكل:</div>';
       h+='<select id="tsel" class="sel"><option value="-1"'+(curTeam===null?' selected':'')+'>📋 الجدول الكامل</option>'+
@@ -214,7 +234,7 @@ function groupsPanel(){
         h+='<h3 class="sec">مباريات '+esc(g.teams[curTeam])+(sl?' (المجموعة '+sl+')':'')+' — '+nMatch(r.count)+'</h3>'+r.html;}
       else h+=renderTemplate(tmpl,g.teams);
     }else{
-      h+='<div class="roster">'+g.teams.map((t,i)=>'<span class="rteam"><b>'+(i+1)+'</b>'+esc(t)+'</span>').join('')+'</div>';
+      h+='<div class="subttl">فرق المجموعة</div>'+rosterTable(null,g.teams,g.cities);
       h+='<div class="note">لا يوجد قالب جدول جاهز لعدد '+nTeam(g.size)+' في ملف الجداول بعد — عُرضت قائمة الفرق فقط.</div>';
     }
   }
