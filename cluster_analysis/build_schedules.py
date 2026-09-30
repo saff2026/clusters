@@ -27,6 +27,12 @@ try:
 except Exception:
     PIT = {}
 
+# تواريخ الجولات لكل فئة (من التقويم الموسمي)
+try:
+    DATES = load("schedule_dates.json")
+except Exception:
+    DATES = {}
+
 ages = []
 for key, label, srcf, grpf in AGES:
     if not (os.path.exists(BASE + srcf) and os.path.exists(BASE + grpf)):
@@ -48,7 +54,8 @@ for key, label, srcf, grpf in AGES:
                        "pmatches": pi.get("matchesDay", 0)})
     ages.append({"key": key, "label": label, "settings": src["settings"],
                  "summary": src["summary"], "templates": templates, "groups": groups,
-                 "principles": src.get("principles", [])})
+                 "principles": src.get("principles", []),
+                 "dates": DATES.get(label, [])})
 
 DATA = {"ages": ages}
 
@@ -91,6 +98,8 @@ table.rtbl td.rcity{color:#8fdcb4;width:130px}
  display:inline-block;padding:3px 12px;border-radius:8px}
 h3.sec{color:#ffd166;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #14543a;padding-bottom:5px}
 .dayttl{color:#eafff3;font-weight:800;font-size:13px;margin:14px 0 6px;background:#0d4b32;border:1px solid #1c7a52;border-radius:8px;padding:5px 12px;display:inline-block}
+.dayttl .dt{color:#ffd166;font-weight:700}
+td.dt{color:#8fdcb4;white-space:nowrap;font-weight:700}
 table{border-collapse:collapse;width:100%;font-size:12.5px;margin-bottom:6px}
 th,td{border:1px solid #14543a;padding:6px 8px;text-align:center}
 th{background:#0d4b32;color:#eafff3;font-weight:700} td{background:#0a2418}
@@ -134,6 +143,26 @@ function rosterTable(nums,teams,cities){
     '</td><td class="rcity">'+esc((cities&&cities[n-1])||'')+'</td></tr>';});
   return h+'</tbody></table></div>';
 }
+function toAr(n){return String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[+d]);}
+const WD=['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const MO=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function fmtDate(iso){const d=new Date(iso+'T00:00:00');
+  return WD[d.getDay()]+' '+toAr(d.getDate())+' '+MO[d.getMonth()]+' '+toAr(d.getFullYear());}
+function shortDate(iso){const d=new Date(iso+'T00:00:00');return toAr(d.getDate())+' '+MO[d.getMonth()];}
+function roundDate(dates,n){
+  if(!dates||!dates.length||!n)return null;
+  if(n<=dates.length)return dates[n-1];
+  const last=new Date(dates[dates.length-1]+'T00:00:00');
+  last.setDate(last.getDate()+7*(n-dates.length));   // الجولات الزائدة: أسبوعيًا (يونيو)
+  return last.toISOString().slice(0,10);
+}
+function dayTitle(dayStr,dates){
+  const m=String(dayStr).match(/(\d+)/);const n=m?+m[1]:0;
+  const fest=/مهرجان/.test(dayStr);
+  const base=(fest?'المهرجان ':'الجولة ')+toAr(n);
+  const dt=roundDate(dates,n);
+  return base+(dt?' — <span class="dt">'+fmtDate(dt)+'</span>':'');
+}
 function cellHTML(cell,teams){
   const m=cell.match(/^(\d+)\s*ضد\s*(\d+)$/);
   if(m&&teams){const a=teams[+m[1]-1]||('#'+m[1]),b=teams[+m[2]-1]||('#'+m[2]);
@@ -142,10 +171,10 @@ function cellHTML(cell,teams){
   return esc(cell);
 }
 function isRestRow(s){return s.cells.some(c=>/^استراحة/.test(c))&&s.cells.every(c=>c===''||/^استراحة/.test(c));}
-function renderTemplate(t,teams){
+function renderTemplate(t,teams,dates){
   if(!t)return '';let h='';
   t.days.forEach(day=>{
-    h+='<div class="dayttl">اليوم '+esc(dayNum(day.day))+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
+    h+='<div class="dayttl">'+dayTitle(day.day,dates)+'</div><div class="stbl"><table><tr><th>الوقت</th>'+
       t.pitches.map(p=>'<th>'+esc(p)+'</th>').join('')+'</tr>';
     day.slots.forEach(s=>{
       if(isRestRow(s)){h+='<tr><td class="time">'+esc(s.time)+'</td><td class="rest" colspan="'+t.pitches.length+'">استراحة</td></tr>';return;}
@@ -161,10 +190,12 @@ function teamMatches(t,teams,idx){const num=idx+1,out=[];
     if(a===num||b===num){const opp=a===num?b:a;
       out.push({day:day.day,time:s.time,pitch:t.pitches[ci],opp:teams[opp-1]||('#'+opp)});}
   })));return out;}
-function teamMatchesHTML(t,teams,idx){
+function teamMatchesHTML(t,teams,idx,dates){
   const rows=teamMatches(t,teams,idx);
-  let h='<div class="stbl"><table><tr><th>اليوم</th><th>الوقت</th><th>الملعب</th><th>الخصم</th></tr>';
-  rows.forEach(r=>{h+='<tr><td>'+esc(dayNum(r.day))+'</td><td class="time">'+esc(r.time)+'</td><td>'+esc(r.pitch)+'</td><td class="mtch"><b>'+esc(r.opp)+'</b></td></tr>';});
+  let h='<div class="stbl"><table><tr><th>الجولة</th><th>التاريخ</th><th>الوقت</th><th>الملعب</th><th>الخصم</th></tr>';
+  rows.forEach(r=>{const m=String(r.day).match(/(\d+)/);const n=m?+m[1]:0;const dt=roundDate(dates,n);
+    const fest=/مهرجان/.test(r.day);
+    h+='<tr><td>'+(fest?'م':'')+toAr(n)+'</td><td class="dt">'+(dt?shortDate(dt):'')+'</td><td class="time">'+esc(r.time)+'</td><td>'+esc(r.pitch)+'</td><td class="mtch"><b>'+esc(r.opp)+'</b></td></tr>';});
   h+='</table></div>';return {html:h,count:rows.length};
 }
 // ===== الحالة =====
@@ -230,9 +261,9 @@ function groupsPanel(){
       h+='<div class="hint">اختر فريقًا لعرض مبارياته فقط، أو «الجدول الكامل» للكل:</div>';
       h+='<select id="tsel" class="sel"><option value="-1"'+(curTeam===null?' selected':'')+'>📋 الجدول الكامل</option>'+
         g.teams.map((t,i)=>{const sl=subLabelOf(subs,i+1);return '<option value="'+i+'"'+(curTeam===i?' selected':'')+'>'+(i+1)+' — '+esc(t)+(sl?' (المجموعة '+sl+')':'')+'</option>';}).join('')+'</select>';
-      if(curTeam!==null){const r=teamMatchesHTML(tmpl,g.teams,curTeam);const sl=subLabelOf(subs,curTeam+1);
+      if(curTeam!==null){const r=teamMatchesHTML(tmpl,g.teams,curTeam,A().dates);const sl=subLabelOf(subs,curTeam+1);
         h+='<h3 class="sec">مباريات '+esc(g.teams[curTeam])+(sl?' (المجموعة '+sl+')':'')+' — '+nMatch(r.count)+'</h3>'+r.html;}
-      else h+=renderTemplate(tmpl,g.teams);
+      else h+=renderTemplate(tmpl,g.teams,A().dates);
     }else{
       h+='<div class="subttl">فرق المجموعة</div>'+rosterTable(null,g.teams,g.cities);
       h+='<div class="note">لا يوجد قالب جدول جاهز لعدد '+nTeam(g.size)+' في ملف الجداول بعد — عُرضت قائمة الفرق فقط.</div>';
@@ -248,7 +279,7 @@ function tmplPanel(){
   if(t){const subs=t.subgroups||[];
     h+='<h3 class="sec">'+esc(t.title)+'</h3>';
     if(subs.length>1)h+='<div class="hint">'+subs.map(s=>'المجموعة '+s.label+': '+s.teams.length+' فرق').join(' · ')+'</div>';
-    h+=renderTemplate(t,null);}
+    h+=renderTemplate(t,null,A().dates);}
   return h;
 }
 function summaryPanel(){
