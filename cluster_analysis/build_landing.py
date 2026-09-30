@@ -2,20 +2,23 @@
 """يبني صفحة الواجهة (index) بأزرار لكل صفحات الموقع."""
 import os
 
+# (الرابط، الأيقونة، العنوان، الوصف، شارة اختيارية)
 CARDS = [
-    ("map.html",       "🗺️", "الخريطة",           "محافظات المملكة والمجموعات وقياس المسافات بينها"),
-    ("dashboard.html", "📊", "لوحة الفرق",         "أعداد الفرق المسجَّلة حسب الفئة والمنطقة والمكتب والصفة"),
-    ("split.html",     "🧩", "تقسيم الفرق",        "تقسيم الفرق على المجموعات ومدى اكتمالها"),
-    ("pay.html",       "💳", "السداد والتفعيل",    "حالة سداد وتفعيل حسابات فرق الهواة وأثر إلغائها على المجموعات"),
-    ("matches.html",   "⚽", "المباريات واللاعبون", "عدد المباريات وعدد اللاعبين لكل مجموعة"),
-    ("schedules.html", "🗓️", "الجداول",             "جداول البطولات ومواعيد المباريات حسب المجموعة"),
+    ("map.html",       "🗺️", "الخريطة",           "محافظات المملكة والمجموعات وقياس المسافات بينها", ""),
+    ("dashboard.html", "📊", "لوحة الفرق",         "أعداد الفرق المسجَّلة حسب الفئة والمنطقة والمكتب والصفة — وقد استُبعدت منها بعض الفرق", "للأرشيف فقط"),
+    ("split.html",     "🧩", "تقسيم الفرق",        "تقسيم الفرق على المجموعات ومدى اكتمالها", ""),
+    ("pay.html",       "💳", "السداد والتفعيل",    "حالة سداد وتفعيل حسابات فرق الهواة وأثر إلغائها على المجموعات", ""),
+    ("matches.html",   "⚽", "المباريات واللاعبون", "عدد المباريات وعدد اللاعبين لكل مجموعة", ""),
+    ("schedules.html", "🗓️", "الجداول",             "جداول البطولات ومواعيد المباريات حسب المجموعة", ""),
 ]
 
 cards_html = "".join(
     '<a class="card" href="{h}"><div class="ic">{i}</div>'
-    '<div class="ttl">{t}</div><div class="dsc">{d}</div>'
-    '<div class="go">افتح ←</div></a>'.format(h=h, i=i, t=t, d=d)
-    for h, i, t, d in CARDS
+    '<div class="ttl">{t}{b}</div><div class="dsc">{d}</div>'
+    '<div class="go">افتح ←</div></a>'.format(
+        h=h, i=i, t=t, d=d,
+        b=(' <span class="tag">'+bd+'</span>') if bd else '')
+    for h, i, t, d, bd in CARDS
 )
 
 logo_tag = ('<img class="logo" src="logo.png" alt="الاتحاد السعودي لكرة القدم" '
@@ -41,6 +44,8 @@ h1{font-size:26px;font-weight:800;margin:0 0 6px;text-align:center;line-height:1
 .card:hover{transform:translateY(-4px);background:#11523a;box-shadow:0 12px 28px #0005}
 .ic{font-size:40px;line-height:1;margin-bottom:12px}
 .ttl{font-size:20px;font-weight:800;margin-bottom:6px}
+.tag{display:inline-block;font-size:11px;font-weight:800;color:#ffe08a;background:#3a2e10;
+ border:1px solid #b8860b;border-radius:8px;padding:1px 8px;margin-right:6px;vertical-align:middle}
 .dsc{font-size:13.5px;color:#bfe9d4;line-height:1.6;flex:1}
 .go{margin-top:14px;font-size:13px;font-weight:700;color:#ffd166}
 .foot{margin-top:34px;font-size:12px;color:#8fc4ac;text-align:center}
