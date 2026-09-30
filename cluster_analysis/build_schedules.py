@@ -10,6 +10,8 @@ BASE = os.path.dirname(os.path.abspath(__file__)) + "/"
 # (المفتاح، الاسم، ملف القوالب، ملف المجموعات)
 AGES = [
     ("u5",  "تحت 5",  "schedule_src_u5.json",     "schedule_groups_u5.json"),
+    ("u7",  "تحت 7",  "schedule_src_u7_9.json",   "schedule_groups_u7.json"),
+    ("u9",  "تحت 9",  "schedule_src_u7_9.json",   "schedule_groups_u9.json"),
     ("u11", "تحت 11", "schedule_src_u11_12.json", "schedule_groups_u11.json"),
     ("u12", "تحت 12", "schedule_src_u11_12.json", "schedule_groups_u12.json"),
     ("u13", "تحت 13", "schedule_src_u13.json",    "schedule_groups_u13.json"),

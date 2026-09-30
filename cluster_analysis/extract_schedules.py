@@ -68,7 +68,7 @@ def parse_wide(rows, hi):
     days, cur, slots = [], None, None
     for r in rows[hi + 1:]:
         day = r[0] if r else ""; time = r[1] if len(r) > 1 else ""
-        if day.startswith("اليوم"):
+        if day.startswith("اليوم") or day.startswith("المهرجان"):
             if cur is not None: days.append({"day": cur, "slots": slots})
             cur, slots = day, []
         if time and ":" in time and cur is not None:
@@ -119,7 +119,7 @@ def parse_template(ws):
     title = rows[0][0] if rows and rows[0] else ""
     # نوع الصيغة من صف الترويسة
     hi = next((i for i, r in enumerate(rows)
-               if len(r) > 1 and r[0] == "اليوم" and r[1].startswith("الوقت")), None)
+               if len(r) > 1 and r[0] in ("اليوم", "المهرجان") and r[1].startswith("الوقت")), None)
     if hi is None:
         return None
     hdr = rows[hi]
