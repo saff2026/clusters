@@ -295,35 +295,34 @@ function groupSummaryTable(a){
   const gl=a.groups.filter(g=>g.size>=5).slice().sort((x,y)=>y.matches-x.matches);
   let tm=0,td=0,tt=0;
   let h='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>المدن</th><th>الفرق</th>'+
-    '<th>المباريات</th><th>'+unitL+'</th></tr></thead><tbody>';
+    '<th>'+unitL+'</th><th>المباريات</th></tr></thead><tbody>';
   gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;
     const cities=[...new Set(g.cities)].join('، ');
     h+='<tr><td style="text-align:right;font-weight:700">'+esc(g.group)+'</td>'+
       '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td>'+
       '<td style="text-align:right;font-size:12px;color:#8fdcb4">'+esc(cities)+'</td><td>'+gp(g.size)+'</td>'+
-      '<td><b style="color:#ffd166">'+gp(g.matches)+'</b></td><td>'+gp(g.days)+'</td></tr>';});
+      '<td>'+gp(g.days)+'</td><td><b style="color:#ffd166">'+gp(g.matches)+'</b></td></tr>';});
   h+='<tr style="font-weight:800;background:#0d4b32"><td style="text-align:right">الإجمالي</td>'+
-    '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(tm)+'</td><td>'+gp(td)+'</td></tr></tbody></table></div>';
+    '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(td)+'</td><td>'+gp(tm)+'</td></tr></tbody></table></div>';
   return h;
 }
 function overviewPanel(){
   let h='<div class="hint">📊 ملخص الموسم لكل فئة — اضغط اسم الفئة بالأعلى لعرض جداولها.</div>';
   h+='<div class="stbl"><table><tr><th>الفئة</th><th>المجموعات</th><th>الفرق</th>'+
-     '<th>عدد المباريات</th><th>عدد المهرجانات</th></tr>';
+     '<th>عدد المهرجانات</th><th>عدد المباريات</th></tr>';
   let TM=0,TF=0,TG=0,TT=0;
   D.ages.forEach(a=>{
     const gs=a.groups.filter(g=>g.size>=5);
     const grps=gs.length, teams=gs.reduce((s,g)=>s+g.size,0);
-    TG+=grps; TT+=teams;
-    if(a.braem)TF+=a.festivals; else TM+=a.matches;
+    TG+=grps; TT+=teams; TM+=a.matches; if(a.braem)TF+=a.festivals;
     h+='<tr><td class="time">'+esc(a.label)+'</td><td>'+gp(grps)+'</td><td>'+gp(teams)+'</td>'+
-       '<td>'+(a.braem?'—':'<b style="color:#ffd166">'+gp(a.matches)+'</b>')+'</td>'+
-       '<td>'+(a.braem?'<b style="color:#ffd166">'+gp(a.festivals)+'</b>':'—')+'</td></tr>';
+       '<td>'+(a.braem?'<b style="color:#ffd166">'+gp(a.festivals)+'</b>':'—')+'</td>'+
+       '<td><b style="color:#ffd166">'+gp(a.matches)+'</b></td></tr>';
   });
   h+='<tr style="font-weight:800;background:#0d4b32"><td class="time">الإجمالي</td><td>'+gp(TG)+'</td><td>'+gp(TT)+'</td>'+
-     '<td>'+gp(TM)+'</td><td>'+gp(TF)+'</td></tr>';
+     '<td>'+gp(TF)+'</td><td>'+gp(TM)+'</td></tr>';
   h+='</table></div>';
-  h+='<div class="hint" style="margin-top:10px">⚽ المباريات لفئات تحت ١١–١٤ (دوري داخل كل مجموعة/مجموعة فرعية). 🎪 المهرجانات لفئات البراعم تحت ٥–٩.</div>';
+  h+='<div class="hint" style="margin-top:10px">⚽ عدد المباريات الفعلية داخل كل مجموعة/مجموعة فرعية. 🎪 المهرجانات لفئات البراعم (تحت٥–٩) حيث تُقام المباريات.</div>';
   // جدول لكل فئة بتفصيل مجموعاتها
   D.ages.forEach(a=>{h+='<h3 class="sec">📋 '+esc(a.label)+' — '+gp(a.groups.filter(g=>g.size>=5).length)+' مجموعة</h3>'+groupSummaryTable(a);});
   return h;}
