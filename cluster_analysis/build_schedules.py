@@ -337,7 +337,6 @@ function groupsPanel(){
   const regions=[...new Set(all.filter((g,i)=>complete(i)).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
   const braem=A().braem;
   let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٥ فرق فأكثر) فقط.</div>';
-  h+='<h3 class="sec">📋 ملخص المجموعات — '+esc(A().label)+' ('+gp(all.filter(g=>g.size>=TARGET).length)+' مجموعة)</h3>'+groupSummaryTable(A());
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
