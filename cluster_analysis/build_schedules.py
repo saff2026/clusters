@@ -3,7 +3,9 @@
 """يبني صفحة «الجداول» متعددة الفئات (schedules.html) من ملفات JSON.
 لكل فئة: schedule_src_<ds>.json (قوالب/ملخص/إعدادات) + schedule_groups_<key>.json (المجموعات→الفرق).
 تُولَّد ملفات src عبر extract_schedules.py، والمجموعات عبر derive_rosters (داخل publish)."""
-import json, os
+import json, os, re
+
+BRAEM = {"تحت 5", "تحت 7", "تحت 9"}
 
 BASE = os.path.dirname(os.path.abspath(__file__)) + "/"
 
@@ -52,10 +54,20 @@ for key, label, srcf, grpf in AGES:
                        "tmpl": size if size in avail else None,
                        "pitches": pi.get("pitches", 0), "pday": pi.get("day", ""),
                        "pmatches": pi.get("matchesDay", 0)})
+    # إجماليات الفئة من القوالب المطبَّقة على المجموعات
+    n_matches = n_fest = 0
+    for g in groups:
+        t = templates.get(str(g["size"]))
+        if not t:
+            continue
+        n_matches += sum(1 for d in t["days"] for s in d["slots"] for c in s["cells"]
+                         if re.match(r"^\d+\s*ضد\s*\d+$", str(c)))
+        n_fest += len(t["days"])
     ages.append({"key": key, "label": label, "settings": src["settings"],
                  "summary": src["summary"], "templates": templates, "groups": groups,
                  "principles": src.get("principles", []),
-                 "dates": DATES.get(label, [])})
+                 "dates": DATES.get(label, []),
+                 "matches": n_matches, "festivals": n_fest, "braem": label in BRAEM})
 
 DATA = {"ages": ages}
 
@@ -224,13 +236,26 @@ function summaryTable(a){
       '<td class="time">'+(rp||'—')+'</td></tr>';});
   h+='</table></div>';return h;}
 function overviewPanel(){
-  let h='<div class="hint">📋 ملخص البطولات لكل الفئات — اضغط اسم الفئة بالأعلى للدخول في تفاصيلها.</div>';
-  D.ages.forEach(a=>{h+='<h3 class="sec">'+esc(a.label)+'</h3>'+summaryTable(a);});
+  let h='<div class="hint">📊 ملخص الموسم لكل فئة — اضغط اسم الفئة بالأعلى لعرض جداولها.</div>';
+  h+='<div class="stbl"><table><tr><th>الفئة</th><th>المجموعات</th><th>الفرق</th>'+
+     '<th>عدد المباريات</th><th>عدد المهرجانات</th></tr>';
+  let TM=0,TF=0,TG=0,TT=0;
+  D.ages.forEach(a=>{
+    const gs=a.groups.filter(g=>g.size>=5);
+    const grps=gs.length, teams=gs.reduce((s,g)=>s+g.size,0);
+    TG+=grps; TT+=teams;
+    if(a.braem)TF+=a.festivals; else TM+=a.matches;
+    h+='<tr><td class="time">'+esc(a.label)+'</td><td>'+gp(grps)+'</td><td>'+gp(teams)+'</td>'+
+       '<td>'+(a.braem?'—':'<b style="color:#ffd166">'+gp(a.matches)+'</b>')+'</td>'+
+       '<td>'+(a.braem?'<b style="color:#ffd166">'+gp(a.festivals)+'</b>':'—')+'</td></tr>';
+  });
+  h+='<tr style="font-weight:800;background:#0d4b32"><td class="time">الإجمالي</td><td>'+gp(TG)+'</td><td>'+gp(TT)+'</td>'+
+     '<td>'+gp(TM)+'</td><td>'+gp(TF)+'</td></tr>';
+  h+='</table></div>';
+  h+='<div class="hint" style="margin-top:10px">⚽ المباريات لفئات تحت ١١–١٤ (دوري داخل كل مجموعة/مجموعة فرعية). 🎪 المهرجانات لفئات البراعم تحت ٥–٩.</div>';
   return h;}
-const TABS=[['groups','المجموعات'],['tmpl','قوالب الجداول'],['summary','ملخص البطولات']];
-function renderTabs(){document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>
-  '<button class="tab'+(k===tab?' on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
-  document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;render();});}
+const TABS=[['groups','المجموعات']];
+function renderTabs(){document.getElementById('tabs').innerHTML='';}
 function groupsPanel(){
   const TARGET=5;
   const all=A().groups;
@@ -292,13 +317,10 @@ function render(){
   if(curAge===-1){document.getElementById('tabs').innerHTML='';p.innerHTML=overviewPanel();return;}
   renderTabs();
   if(curAge===-2){document.getElementById('tabs').innerHTML='';p.innerHTML=principlesPanel();return;}
-  p.innerHTML = tab==='groups'?groupsPanel() : tab==='tmpl'?tmplPanel() : summaryPanel();
-  if(tab==='groups'){
-    const rs=document.getElementById('rsel');if(rs)rs.onchange=()=>{curRegion=rs.value;curTeam=null;curG=-1;render();window.scrollTo(0,0);};
-    const gs=document.getElementById('gsel');if(gs)gs.onchange=()=>{curG=+gs.value;curTeam=null;render();window.scrollTo(0,0);};
-    const ts=document.getElementById('tsel');if(ts)ts.onchange=()=>{const v=+ts.value;curTeam=(v<0?null:v);render();};
-  }
-  if(tab==='tmpl'){const ms=document.getElementById('tmsel');if(ms)ms.onchange=()=>{curT=+ms.value;render();window.scrollTo(0,0);};}
+  p.innerHTML = groupsPanel();
+  const rs=document.getElementById('rsel');if(rs)rs.onchange=()=>{curRegion=rs.value;curTeam=null;curG=-1;render();window.scrollTo(0,0);};
+  const gs=document.getElementById('gsel');if(gs)gs.onchange=()=>{curG=+gs.value;curTeam=null;render();window.scrollTo(0,0);};
+  const ts=document.getElementById('tsel');if(ts)ts.onchange=()=>{const v=+ts.value;curTeam=(v<0?null:v);render();};
 }
 render();
 </script>
