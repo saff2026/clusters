@@ -49,9 +49,14 @@ for key, label, srcf, grpf in AGES:
         cities = [t.get("city", "") for t in g["teams"]]
         size = len(teams)
         pi = pmap.get(g["group"], {})
+        gt = templates.get(str(size))
+        g_m = sum(1 for d in gt["days"] for s in d["slots"] for c in s["cells"]
+                  if re.match(r"^\d+\s*ضد\s*\d+$", str(c))) if gt else 0
+        g_d = len(gt["days"]) if gt else 0
         groups.append({"group": g["group"], "region": g.get("region", ""),
                        "teams": teams, "cities": cities, "size": size,
                        "tmpl": size if size in avail else None,
+                       "matches": g_m, "days": g_d,
                        "pitches": pi.get("pitches", 0), "pday": pi.get("day", ""),
                        "pmatches": pi.get("matchesDay", 0)})
     # إجماليات الفئة من القوالب المطبَّقة على المجموعات
@@ -311,7 +316,22 @@ function groupsPanel(){
   // المكتملة = ٥ فرق فأكثر
   const complete=i=>all[i].size>=TARGET;
   const regions=[...new Set(all.filter((g,i)=>complete(i)).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
+  const braem=A().braem; const unitL=braem?'المهرجانات':'الجولات';
   let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٥ فرق فأكثر) فقط.</div>';
+  // ملخص كل مجموعة: عدد المباريات وعدد المهرجانات/الجولات
+  {
+    const gl=all.filter(g=>g.size>=TARGET).slice().sort((a,b)=>b.matches-a.matches);
+    let tm=0,td=0,tt=0;
+    h+='<h3 class="sec">📋 ملخص المجموعات — '+esc(A().label)+' ('+gp(gl.length)+' مجموعة)</h3>';
+    h+='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>الفرق</th>'+
+       '<th>المباريات</th><th>'+unitL+'</th></tr></thead><tbody>';
+    gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;
+      h+='<tr><td style="text-align:right;font-weight:700">'+esc(g.group)+'</td>'+
+        '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td><td>'+gp(g.size)+'</td>'+
+        '<td><b style="color:#ffd166">'+gp(g.matches)+'</b></td><td>'+gp(g.days)+'</td></tr>';});
+    h+='<tr style="font-weight:800;background:#0d4b32"><td style="text-align:right">الإجمالي</td>'+
+       '<td>—</td><td>'+gp(tt)+'</td><td>'+gp(tm)+'</td><td>'+gp(td)+'</td></tr></tbody></table></div>';
+  }
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
@@ -322,7 +342,8 @@ function groupsPanel(){
     esc(all[i].group)+' — '+nTeam(all[i].size)+'</option>').join('')+'</select>';
   const g=(curG>=0)?all[curG]:null;
   if(g){
-    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+'</h3>';
+    h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+
+       ' · '+nMatch(g.matches)+' · '+gp(g.days)+' '+(braem?'مهرجان':'جولة')+'</h3>';
     if(g.tmpl){
       const tmpl=A().templates[String(g.tmpl)];const subs=tmpl.subgroups||[];
       if(subs.length>1){
