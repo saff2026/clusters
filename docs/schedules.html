@@ -3,6 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الجدول والمباريات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#eafff3}
 .top{background:#006C35;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
@@ -39,6 +40,11 @@ h3.sec{color:#ffd166;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #1
 .dayttl{color:#eafff3;font-weight:800;font-size:13px;margin:14px 0 6px;background:#0d4b32;border:1px solid #1c7a52;border-radius:8px;padding:5px 12px;display:inline-block}
 .dayttl .dt{color:#ffd166;font-weight:700}
 td.dt{color:#8fdcb4;white-space:nowrap;font-weight:700}
+.xbtn{background:#1a7a4e;border:1px solid #2fe6b8;color:#eafff3;border-radius:10px;padding:8px 16px;cursor:pointer;font-family:'Tajawal';font-size:13.5px;font-weight:800}
+.xbtn:hover{background:#23955f}
+table.mtbl td,table.mtbl th{text-align:center}
+table.mtbl tr:nth-child(even) td{background:#0c2c1d}
+table.mtbl td.mtch{text-align:center}
 table{border-collapse:collapse;width:100%;font-size:12.5px;margin-bottom:6px}
 th,td{border:1px solid #14543a;padding:6px 8px;text-align:center}
 th{background:#0d4b32;color:#eafff3;font-weight:700} td{background:#0a2418}
@@ -112,6 +118,49 @@ function cellHTML(cell,teams){
   return esc(cell);
 }
 function isRestRow(s){return s.cells.some(c=>/^استراحة/.test(c))&&s.cells.every(c=>c===''||/^استراحة/.test(c));}
+// كل مباريات مجموعة كقائمة مسطّحة (مباراة في كل سطر)
+let CUR_MS=[], CUR_TITLE='';
+function allMatches(t,g,dates){
+  const subs=t.subgroups||[]; const out=[];
+  t.days.forEach(day=>{
+    const m=String(day.day).match(/(\d+)/); const rnd=m?+m[1]:0;
+    const fest=/مهرجان/.test(day.day); const dt=roundDate(dates,rnd);
+    day.slots.forEach(s=>s.cells.forEach((c,ci)=>{
+      const mm=String(c).match(/^(\d+)\s*ضد\s*(\d+)$/); if(!mm)return;
+      const a=+mm[1],b=+mm[2];
+      out.push({sub:subLabelOf(subs,a),fest:fest,round:rnd,date:dt||'',time:s.time,
+        pitch:t.pitches[ci]||('ملعب '+(ci+1)),a:g.teams[a-1]||('#'+a),b:g.teams[b-1]||('#'+b)});
+    }));
+  });
+  return out;
+}
+function fullSchedule(t,g,dates){
+  const subs=t.subgroups||[]; const multi=subs.length>1;
+  const ms=allMatches(t,g,dates); CUR_MS=ms; CUR_TITLE=A().label+' - '+g.group;
+  const unit=ms.some(x=>x.fest)?'المهرجان':'الجولة';
+  let h='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0 6px">'+
+    '<h3 class="sec" style="margin:0;border:0;padding:0">📋 جدول المباريات ('+nMatch(ms.length)+')</h3>'+
+    '<button class="xbtn" onclick="dlXlsx()">📥 تنزيل اكسل</button></div>';
+  h+='<div class="stbl"><table class="mtbl"><thead><tr>'+(multi?'<th>الفرعية</th>':'')+
+    '<th>'+unit+'</th><th>التاريخ</th><th>الوقت</th><th>الملعب</th><th>المباراة</th></tr></thead><tbody>';
+  ms.forEach(x=>{h+='<tr>'+(multi?'<td>'+esc(x.sub)+'</td>':'')+
+    '<td>'+(x.fest?'م':'')+toAr(x.round)+'</td><td class="dt">'+(x.date?shortDate(x.date):'')+'</td>'+
+    '<td class="time">'+esc(x.time)+'</td><td>'+esc(x.pitch)+'</td>'+
+    '<td class="mtch"><b>'+esc(x.a)+'</b> ضد <b>'+esc(x.b)+'</b></td></tr>';});
+  h+='</tbody></table></div>';
+  return h;
+}
+function dlXlsx(){
+  if(!CUR_MS.length||typeof XLSX==='undefined')return;
+  const multi=CUR_MS.some(x=>x.sub);
+  const head=[].concat(multi?['المجموعة الفرعية']:[],['الجولة/المهرجان','التاريخ','الوقت','الملعب','الفريق الأول','الفريق الثاني']);
+  const rows=[head];
+  CUR_MS.forEach(x=>rows.push([].concat(multi?[x.sub]:[],
+    [(x.fest?'مهرجان ':'جولة ')+x.round, x.date||'', x.time, x.pitch, x.a, x.b])));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'الجدول');
+  XLSX.writeFile(wb, CUR_TITLE.replace(/[\\/\s]+/g,'_')+'.xlsx');
+}
 function renderTemplate(t,teams,dates){
   if(!t)return '';let h='';
   t.days.forEach(day=>{
@@ -217,7 +266,7 @@ function groupsPanel(){
         g.teams.map((t,i)=>{const sl=subLabelOf(subs,i+1);return '<option value="'+i+'"'+(curTeam===i?' selected':'')+'>'+(i+1)+' — '+esc(t)+(sl?' (المجموعة '+sl+')':'')+'</option>';}).join('')+'</select>';
       if(curTeam!==null){const r=teamMatchesHTML(tmpl,g.teams,curTeam,A().dates);const sl=subLabelOf(subs,curTeam+1);
         h+='<h3 class="sec">مباريات '+esc(g.teams[curTeam])+(sl?' (المجموعة '+sl+')':'')+' — '+nMatch(r.count)+'</h3>'+r.html;}
-      else h+=renderTemplate(tmpl,g.teams,A().dates);
+      else h+=fullSchedule(tmpl,g,A().dates);
     }else{
       h+='<div class="subttl">فرق المجموعة</div>'+rosterTable(null,g.teams,g.cities);
       h+='<div class="note">لا يوجد قالب جدول جاهز لعدد '+nTeam(g.size)+' في ملف الجداول بعد — عُرضت قائمة الفرق فقط.</div>';
