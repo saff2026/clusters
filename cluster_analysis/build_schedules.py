@@ -74,7 +74,7 @@ DATA = {"ages": ages}
 HTML = r"""<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>جداول البطولات</title>
+<title>الجدول والمباريات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box} body{margin:0;font-family:'Tajawal',sans-serif;background:#04150e;color:#eafff3}
@@ -129,7 +129,7 @@ td.rest{color:#6f9a86;font-style:italic;background:#08190f}
 </style></head><body>
 <div class="top">
  <img class="logo" src="logo.png" alt="الاتحاد" onerror="this.remove()">
- <h1>🗓️ جداول البطولات</h1>
+ <h1>🗓️ الجدول والمباريات</h1>
 </div>
 <div class="wrap">
  <div class="agebar" id="agebar"></div>

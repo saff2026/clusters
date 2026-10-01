@@ -167,10 +167,6 @@ HTML = r"""<!DOCTYPE html>
  <h1>عدد اللاعبين لكل مجموعة</h1>
 </div>
 <div class="wrap">
- <nav class="nav">
-   <a class="navlink" href="matches.html">عدد المباريات</a>
-   <a class="navlink on" href="players.html">عدد اللاعبين</a>
- </nav>
  <div class="tabs" id="ageT"></div>
  <div style="color:#8fdcb4;font-size:12.5px;margin:2px 0 12px">💡 اختر فئة أو أكثر — تُجمع أرقامها تلقائيًا.</div>
  <div class="kpis" id="kpis"></div>
