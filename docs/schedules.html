@@ -247,14 +247,16 @@ function groupsPanel(){
     const gl=all.filter(g=>g.size>=TARGET).slice().sort((a,b)=>b.matches-a.matches);
     let tm=0,td=0,tt=0;
     h+='<h3 class="sec">📋 ملخص المجموعات — '+esc(A().label)+' ('+gp(gl.length)+' مجموعة)</h3>';
-    h+='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>الفرق</th>'+
+    h+='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>المدن</th><th>الفرق</th>'+
        '<th>المباريات</th><th>'+unitL+'</th></tr></thead><tbody>';
     gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;
+      const cities=[...new Set(g.cities)].join('، ');
       h+='<tr><td style="text-align:right;font-weight:700">'+esc(g.group)+'</td>'+
-        '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td><td>'+gp(g.size)+'</td>'+
+        '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td>'+
+        '<td style="text-align:right;font-size:12px;color:#8fdcb4">'+esc(cities)+'</td><td>'+gp(g.size)+'</td>'+
         '<td><b style="color:#ffd166">'+gp(g.matches)+'</b></td><td>'+gp(g.days)+'</td></tr>';});
     h+='<tr style="font-weight:800;background:#0d4b32"><td style="text-align:right">الإجمالي</td>'+
-       '<td>—</td><td>'+gp(tt)+'</td><td>'+gp(tm)+'</td><td>'+gp(td)+'</td></tr></tbody></table></div>';
+       '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(tm)+'</td><td>'+gp(td)+'</td></tr></tbody></table></div>';
   }
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
