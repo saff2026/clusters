@@ -213,6 +213,23 @@ function summaryTable(a){
     h+='<tr>'+s.headers.map((_,j)=>'<td'+(j===0?' class="time"':'')+'>'+esc(r[j]||'')+'</td>').join('')+
       '<td class="time">'+(rp||'—')+'</td></tr>';});
   h+='</table></div>';return h;}
+// جدول ملخص المجموعات لفئة: المجموعة · المنطقة · المدن · الفرق · المباريات · المهرجانات/الجولات
+function groupSummaryTable(a){
+  const unitL=a.braem?'المهرجانات':'الجولات';
+  const gl=a.groups.filter(g=>g.size>=5).slice().sort((x,y)=>y.matches-x.matches);
+  let tm=0,td=0,tt=0;
+  let h='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>المدن</th><th>الفرق</th>'+
+    '<th>المباريات</th><th>'+unitL+'</th></tr></thead><tbody>';
+  gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;
+    const cities=[...new Set(g.cities)].join('، ');
+    h+='<tr><td style="text-align:right;font-weight:700">'+esc(g.group)+'</td>'+
+      '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td>'+
+      '<td style="text-align:right;font-size:12px;color:#8fdcb4">'+esc(cities)+'</td><td>'+gp(g.size)+'</td>'+
+      '<td><b style="color:#ffd166">'+gp(g.matches)+'</b></td><td>'+gp(g.days)+'</td></tr>';});
+  h+='<tr style="font-weight:800;background:#0d4b32"><td style="text-align:right">الإجمالي</td>'+
+    '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(tm)+'</td><td>'+gp(td)+'</td></tr></tbody></table></div>';
+  return h;
+}
 function overviewPanel(){
   let h='<div class="hint">📊 ملخص الموسم لكل فئة — اضغط اسم الفئة بالأعلى لعرض جداولها.</div>';
   h+='<div class="stbl"><table><tr><th>الفئة</th><th>المجموعات</th><th>الفرق</th>'+
@@ -231,6 +248,8 @@ function overviewPanel(){
      '<td>'+gp(TM)+'</td><td>'+gp(TF)+'</td></tr>';
   h+='</table></div>';
   h+='<div class="hint" style="margin-top:10px">⚽ المباريات لفئات تحت ١١–١٤ (دوري داخل كل مجموعة/مجموعة فرعية). 🎪 المهرجانات لفئات البراعم تحت ٥–٩.</div>';
+  // جدول لكل فئة بتفصيل مجموعاتها
+  D.ages.forEach(a=>{h+='<h3 class="sec">📋 '+esc(a.label)+' — '+gp(a.groups.filter(g=>g.size>=5).length)+' مجموعة</h3>'+groupSummaryTable(a);});
   return h;}
 const TABS=[['groups','المجموعات']];
 function renderTabs(){document.getElementById('tabs').innerHTML='';}
@@ -240,24 +259,9 @@ function groupsPanel(){
   // المكتملة = ٥ فرق فأكثر
   const complete=i=>all[i].size>=TARGET;
   const regions=[...new Set(all.filter((g,i)=>complete(i)).map(g=>g.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
-  const braem=A().braem; const unitL=braem?'المهرجانات':'الجولات';
+  const braem=A().braem;
   let h='<div class="hint">💡 اختر المنطقة ثم المجموعة لعرض فرقها وجدولها. الفرق المرقّمة مؤقتة (ترتيب التسجيل). تُعرض المجموعات المكتملة (٥ فرق فأكثر) فقط.</div>';
-  // ملخص كل مجموعة: عدد المباريات وعدد المهرجانات/الجولات
-  {
-    const gl=all.filter(g=>g.size>=TARGET).slice().sort((a,b)=>b.matches-a.matches);
-    let tm=0,td=0,tt=0;
-    h+='<h3 class="sec">📋 ملخص المجموعات — '+esc(A().label)+' ('+gp(gl.length)+' مجموعة)</h3>';
-    h+='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>المدن</th><th>الفرق</th>'+
-       '<th>المباريات</th><th>'+unitL+'</th></tr></thead><tbody>';
-    gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;
-      const cities=[...new Set(g.cities)].join('، ');
-      h+='<tr><td style="text-align:right;font-weight:700">'+esc(g.group)+'</td>'+
-        '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td>'+
-        '<td style="text-align:right;font-size:12px;color:#8fdcb4">'+esc(cities)+'</td><td>'+gp(g.size)+'</td>'+
-        '<td><b style="color:#ffd166">'+gp(g.matches)+'</b></td><td>'+gp(g.days)+'</td></tr>';});
-    h+='<tr style="font-weight:800;background:#0d4b32"><td style="text-align:right">الإجمالي</td>'+
-       '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(tm)+'</td><td>'+gp(td)+'</td></tr></tbody></table></div>';
-  }
+  h+='<h3 class="sec">📋 ملخص المجموعات — '+esc(A().label)+' ('+gp(all.filter(g=>g.size>=TARGET).length)+' مجموعة)</h3>'+groupSummaryTable(A());
   h+='<div class="sellbl">🗺️ المنطقة</div>';
   h+='<select id="rsel" class="sel"><option value=""'+(curRegion===''?' selected':'')+'>كل المناطق</option>'+
     regions.map(r=>'<option value="'+esc(r)+'"'+(curRegion===r?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select>';
