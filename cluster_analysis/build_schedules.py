@@ -53,14 +53,15 @@ for key, label, srcf, grpf in AGES:
         g_m = sum(1 for d in gt["days"] for s in d["slots"] for c in s["cells"]
                   if re.match(r"^\d+\s*ضد\s*\d+$", str(c))) if gt else 0
         g_d = len(gt["days"]) if gt else 0
+        g_p = len(gt.get("subgroups", [])) if gt else 0   # الملاعب القانونية = عدد المجموعات الفرعية
         groups.append({"group": g["group"], "region": g.get("region", ""),
                        "teams": teams, "cities": cities, "size": size,
                        "tmpl": size if size in avail else None,
-                       "matches": g_m, "days": g_d,
+                       "matches": g_m, "days": g_d, "np": g_p,
                        "pitches": pi.get("pitches", 0), "pday": pi.get("day", ""),
                        "pmatches": pi.get("matchesDay", 0)})
     # إجماليات الفئة من القوالب المطبَّقة على المجموعات
-    n_matches = n_fest = 0
+    n_matches = n_fest = n_pitch = 0
     for g in groups:
         t = templates.get(str(g["size"]))
         if not t:
@@ -68,11 +69,13 @@ for key, label, srcf, grpf in AGES:
         n_matches += sum(1 for d in t["days"] for s in d["slots"] for c in s["cells"]
                          if re.match(r"^\d+\s*ضد\s*\d+$", str(c)))
         n_fest += len(t["days"])
+        n_pitch += len(t.get("subgroups", []))
     ages.append({"key": key, "label": label, "settings": src["settings"],
                  "summary": src["summary"], "templates": templates, "groups": groups,
                  "principles": src.get("principles", []),
                  "dates": DATES.get(label, []),
-                 "matches": n_matches, "festivals": n_fest, "braem": label in BRAEM})
+                 "matches": n_matches, "festivals": n_fest, "pitches": n_pitch,
+                 "braem": label in BRAEM})
 
 DATA = {"ages": ages}
 
@@ -294,33 +297,35 @@ function groupSummaryTable(a){
   const unitL=a.braem?'المهرجانات':'الجولات';
   const gl=a.groups.filter(g=>g.size>=5).slice().sort((x,y)=>y.matches-x.matches);
   let tm=0,td=0,tt=0;
+  let tp=0;
   let h='<div class="stbl"><table class="mtbl"><thead><tr><th>المجموعة</th><th>المنطقة</th><th>المدن</th><th>الفرق</th>'+
-    '<th>'+unitL+'</th><th>المباريات</th></tr></thead><tbody>';
-  gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;
+    '<th>الملاعب</th><th>'+unitL+'</th><th>المباريات</th></tr></thead><tbody>';
+  gl.forEach(g=>{tm+=g.matches;td+=g.days;tt+=g.size;tp+=g.np;
     const cities=[...new Set(g.cities)].join('، ');
     h+='<tr><td style="text-align:right;font-weight:700">'+esc(g.group)+'</td>'+
       '<td>'+esc((g.region||'').replace(/^منطقة /,''))+'</td>'+
       '<td style="text-align:right;font-size:12px;color:#8fdcb4">'+esc(cities)+'</td><td>'+gp(g.size)+'</td>'+
-      '<td>'+gp(g.days)+'</td><td><b style="color:#ffd166">'+gp(g.matches)+'</b></td></tr>';});
+      '<td>'+gp(g.np)+'</td><td>'+gp(g.days)+'</td><td><b style="color:#ffd166">'+gp(g.matches)+'</b></td></tr>';});
   h+='<tr style="font-weight:800;background:#0d4b32"><td style="text-align:right">الإجمالي</td>'+
-    '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(td)+'</td><td>'+gp(tm)+'</td></tr></tbody></table></div>';
+    '<td>—</td><td>—</td><td>'+gp(tt)+'</td><td>'+gp(tp)+'</td><td>'+gp(td)+'</td><td>'+gp(tm)+'</td></tr></tbody></table></div>';
   return h;
 }
 function overviewPanel(){
   let h='<div class="hint">📊 ملخص الموسم لكل فئة — اضغط اسم الفئة بالأعلى لعرض جداولها.</div>';
-  h+='<div class="stbl"><table><tr><th>الفئة</th><th>المجموعات</th><th>الفرق</th>'+
+  h+='<div class="stbl"><table><tr><th>الفئة</th><th>المجموعات</th><th>الفرق</th><th>عدد الملاعب</th>'+
      '<th>عدد المهرجانات</th><th>عدد المباريات</th></tr>';
-  let TM=0,TF=0,TG=0,TT=0;
+  let TM=0,TF=0,TG=0,TT=0,TP=0;
   D.ages.forEach(a=>{
     const gs=a.groups.filter(g=>g.size>=5);
     const grps=gs.length, teams=gs.reduce((s,g)=>s+g.size,0);
-    TG+=grps; TT+=teams; TM+=a.matches; if(a.braem)TF+=a.festivals;
+    TG+=grps; TT+=teams; TM+=a.matches; TP+=a.pitches; if(a.braem)TF+=a.festivals;
     h+='<tr><td class="time">'+esc(a.label)+'</td><td>'+gp(grps)+'</td><td>'+gp(teams)+'</td>'+
+       '<td>'+gp(a.pitches)+'</td>'+
        '<td>'+(a.braem?'<b style="color:#ffd166">'+gp(a.festivals)+'</b>':'—')+'</td>'+
        '<td><b style="color:#ffd166">'+gp(a.matches)+'</b></td></tr>';
   });
   h+='<tr style="font-weight:800;background:#0d4b32"><td class="time">الإجمالي</td><td>'+gp(TG)+'</td><td>'+gp(TT)+'</td>'+
-     '<td>'+gp(TF)+'</td><td>'+gp(TM)+'</td></tr>';
+     '<td>'+gp(TP)+'</td><td>'+gp(TF)+'</td><td>'+gp(TM)+'</td></tr>';
   h+='</table></div>';
   h+='<div class="hint" style="margin-top:10px">⚽ عدد المباريات الفعلية داخل كل مجموعة/مجموعة فرعية. 🎪 المهرجانات لفئات البراعم (تحت٥–٩) حيث تُقام المباريات.</div>';
   // جدول لكل فئة بتفصيل مجموعاتها
@@ -347,7 +352,7 @@ function groupsPanel(){
   const g=(curG>=0)?all[curG]:null;
   if(g){
     h+='<h3 class="sec">'+esc(g.group)+' — '+nTeam(g.size)+(g.region?' · '+esc(g.region):'')+
-       ' · '+nMatch(g.matches)+' · '+gp(g.days)+' '+(braem?'مهرجان':'جولة')+'</h3>';
+       ' · '+nPitch(g.np)+' · '+nMatch(g.matches)+' · '+gp(g.days)+' '+(braem?'مهرجان':'جولة')+'</h3>';
     if(g.tmpl){
       const tmpl=A().templates[String(g.tmpl)];const subs=tmpl.subgroups||[];
       if(subs.length>1){
