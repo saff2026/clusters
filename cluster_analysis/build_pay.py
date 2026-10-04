@@ -113,6 +113,40 @@ for r in r2[hi + 1:]:
             for age, grp, v in contrib:
                 rm[metric][(age, grp)] += v
 
+# ---- فرق مُحتفَظ بها يدويًا (غابت عن الملف لكن تبقى ضمن المجموعة) ----
+import os as _os
+if _os.path.exists(BASE + "manual_teams.json"):
+    for mt in json.load(open(BASE + "manual_teams.json", encoding="utf-8")):
+        mcity = CANON.get(mt["city"], mt["city"])
+        ment = 0
+        for mage, mv in mt.get("ages", {}).items():
+            mv = int(mv)
+            if mv <= 0:
+                continue
+            mgrp = (C2G.get(mage, {}) or {}).get(mcity)
+            if mgrp:
+                base[(mage, mgrp)] += mv
+                ment += mv
+        total_teams += 1
+        total_entries += ment
+        if mt.get("sifa") == "هواة":
+            amateur_teams += 1
+        # إن لم يكن متوافقًا (لم يُسدِّد/لم يُفعِّل) يُضاف للمعايير
+        mun = bool(mt.get("unpaid")); mna = bool(mt.get("not_acct"))
+        mreg = REG.get(mcity, "غير محدد")
+        for metric, flag in (("pay", mun), ("acct", mna),
+                             ("both", mun and mna), ("either", mun or mna)):
+            if flag:
+                teams_ct[metric] += 1; entries_ct[metric] += ment
+                byreg_teams[metric][mreg] += 1; byreg_entries[metric][mreg] += ment
+                for mage, mv in mt.get("ages", {}).items():
+                    mv = int(mv)
+                    if mv <= 0:
+                        continue
+                    mgrp = (C2G.get(mage, {}) or {}).get(mcity)
+                    if mgrp:
+                        rm[metric][(mage, mgrp)] += mv
+
 # ========== 3) التصدير ==========
 groups = {}
 for (age, grp), tot in base.items():
