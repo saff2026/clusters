@@ -240,6 +240,10 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 
   <section class="pz-card" id="calendar">
     <h2 id="cal-title">الروزنامة الكاملة</h2>
+    <div class="pz-seg pz-jn-seg" role="group" aria-label="الروزنامة" id="cal-seg">
+      <button type="button" id="c-all" aria-pressed="true">الروزنامة العامة</button>
+      <button type="button" id="c-jn" aria-pressed="false">روزنامة أندية جازان ونجران</button>
+    </div>
     <div class="pz-cal-wrap">
       <div class="pz-cal dash-skeleton" id="cal" data-source="grid cols"></div>
     </div>
@@ -280,7 +284,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   const TODAY = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
   const DMY = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
   const MODE_AR = {gap: 'لعب مؤجلة واحدة بين كل جولتين', every3: 'لعب مباراة كل 3 أيام'};
-  let picked = 'ALL', mode = 'gap', uploaded = null, jnView = false, uploadedName = '';
+  let picked = 'ALL', mode = 'gap', uploaded = null, jnView = false, jnCal = false, uploadedName = '';
   try { const s = JSON.parse(localStorage.getItem('pz-teams') || 'null'); if (s && Array.isArray(s.teams)) { uploaded = s.teams; uploadedName = s.name || ''; } } catch (e) {}
 
   const pick = document.getElementById('pick');
@@ -289,6 +293,8 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   document.getElementById('m-every3').addEventListener('click', () => { mode = 'every3'; draw(); });
   document.getElementById('t-all').addEventListener('click', () => { jnView = false; draw(); });
   document.getElementById('t-jn').addEventListener('click', () => { jnView = true; draw(); });
+  document.getElementById('c-all').addEventListener('click', () => { jnCal = false; draw(); });
+  document.getElementById('c-jn').addEventListener('click', () => { jnCal = true; draw(); });
 
   // ---- live counts: a proposed date counts only from today on ----
   const slotDates = (L, key, m) => L.filter(s => s.key === key && s.mode === m).map(s => String(s.date).slice(0, 10)).sort();
@@ -507,7 +513,11 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     else if (G.status !== 'ok' || CW.status !== 'ok') pending(calEl);
     else {
       calEl.classList.remove('dash-skeleton');
-      const cells = G.data.filter(d => d.key === picked && d.mode === mode);
+      const jnc = jnCal && UNDER18.has(picked);
+      document.getElementById('cal-seg').style.display = UNDER18.has(picked) ? '' : 'none';
+      document.getElementById('c-all').setAttribute('aria-pressed', !jnc);
+      document.getElementById('c-jn').setAttribute('aria-pressed', jnc);
+      const cells = G.data.filter(d => d.key === picked && d.mode === (jnc ? mode + '_jan' : mode));
       const widths = CW.data.filter(d => d.key === picked).sort((a, b) => a.c - b.c);
       const at = new Map(cells.map(d => [d.r + ',' + d.c, d]));
       const covered = new Set();
@@ -525,7 +535,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       {
         const tr = document.createElement('tr'), td = document.createElement('td');
         td.colSpan = widths.length; td.className = 'xl-head';
-        const box = document.createElement('div'); box.className = 'xl-title'; box.textContent = 'روزنامة ' + (row ? row.name : '');
+        const box = document.createElement('div'); box.className = 'xl-title'; box.textContent = 'روزنامة ' + (row ? row.name : '') + (jnc ? ' — أندية جازان ونجران (المؤجلات من يناير 2027)' : '');
         td.append(box); tr.append(td); tb.append(tr);
       }
       for (let r = hdrRow; r <= nR; r++) {
@@ -543,7 +553,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
             if (d.sz) td.style.fontSize = Math.min(d.sz, 18) + 'px';
             let txt = d.t || '';
             if (d.d && txt.startsWith('مؤجلة')) txt = gone ? '' : 'مؤجلة ' + num.get(d.d);
-            if (d.cnt) txt = 'عدد المواعيد المتاحة من اليوم ' + DMY(TODAY) + ': ' + live.length + ' (خيار: ' + MODE_AR[mode] + ')';
+            if (d.cnt) txt = 'عدد المواعيد المتاحة ' + (jnc ? 'من 1 يناير 2027' : 'من اليوم ' + DMY(TODAY)) + ': ' + live.length + ' (خيار: ' + MODE_AR[mode] + ')';
             if (txt) {
               if (d.v) { const sp = document.createElement('span'); sp.className = 'vt'; sp.textContent = txt; sp.style.maxHeight = ((d.rs || 1) * 20 - 4) + 'px'; td.append(sp); }
               else td.textContent = txt;
