@@ -122,6 +122,11 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .pz-clubs td.num { font-weight: 700; font-size: 15px; }
 .pz-clubs td.num.red { color: var(--color-bad); } .pz-clubs td.num.amber { color: var(--color-warn); } .pz-clubs td.num.green { color: var(--color-ok); }
 .pz-clubs tbody tr { cursor: default; }
+.pz-clubs tr.lv-over td { background: #7f1d1d; color: #ffffff; }
+.pz-clubs td.num.over { color: #ffffff; }
+.pz-clubs tr.lv-over .pz-jn { color: #ffd6d6; }
+.pz-chip.over { background: #ffffff; color: #7f1d1d; }
+.pz-warn { width: 1.05em; height: 1.05em; vertical-align: -0.15em; margin-inline-end: 4px; }
 .pz-clubs tr.lv-red td { background: color-mix(in srgb, var(--color-bad) 13%, var(--color-bg)); }
 .pz-clubs tr.lv-amber td { background: color-mix(in srgb, var(--color-warn) 15%, var(--color-bg)); }
 .pz-clubs tr.lv-green td { background: color-mix(in srgb, var(--color-ok) 11%, var(--color-bg)); }
@@ -291,7 +296,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       const need = Number(t.postponed) + forced;
       const left = cap - need;
       const used = cap > 0 ? need / cap : 1;
-      const lvl = left <= 0 || used >= 0.6 ? 'red' : used >= 0.3 ? 'amber' : 'green';
+      const lvl = left < 0 ? 'over' : left === 0 || used >= 0.6 ? 'red' : used >= 0.3 ? 'amber' : 'green';
       return {...t, jn, cap, forced, left, used, lvl};
     });
   }
@@ -458,7 +463,13 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       document.getElementById('clubs-empty').hidden = rowsC.length > 0;
       document.getElementById('clubs-tbl').hidden = rowsC.length === 0;
       document.getElementById('clubs-title').textContent = 'الأندية التي لها مباريات مؤجلة' + (isAll ? ' — كل البطولات' : row ? ' — ' + row.name : '') + (rowsC.length ? ' (' + rowsC.length + ')' : '');
-      const LBL = {red: 'خطير', amber: 'انتبه', green: 'آمن'};
+      const LBL = {over: 'تجاوز الحد', red: 'خطير', amber: 'انتبه', green: 'آمن'};
+      const warn = () => {
+        const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('class', 'pz-warn'); svg.setAttribute('aria-hidden', 'true');
+        const p = document.createElementNS(NS, 'path'); p.setAttribute('d', 'M12 2 1 21h22L12 2zm0 6 .01 0L13 15h-2l1-7zm-1 9h2v2h-2v-2z'); p.setAttribute('fill', 'currentColor');
+        svg.append(p); return svg;
+      };
       ctb.replaceChildren(...rowsC.map(r => {
         const tr = document.createElement('tr'); tr.className = 'lv-' + r.lvl;
         const c = (txt, cls) => { const td = document.createElement('td'); td.textContent = txt; if (cls) td.className = cls; tr.append(td); return td; };
@@ -468,9 +479,10 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
         if (r.jn) { const s = document.createElement('span'); s.className = 'pz-jn'; s.textContent = 'لا يلعب قبل يناير'; city.append(s); }
         c(r.postponed, 'num');
         if (anyForced) c(r.forced ? r.forced : '—', 'num');
-        c(r.left > 0 ? r.left : (r.left === 0 ? '0' : 'يتجاوز بـ ' + (-r.left)), 'num ' + r.lvl);
+        const leftTd = c(r.left > 0 ? r.left : (r.left === 0 ? '0' : 'يتجاوز بـ ' + (-r.left)), 'num ' + r.lvl);
+        if (r.lvl === 'over') leftTd.prepend(warn());
         const st = c(''); const chip = document.createElement('span'); chip.className = 'pz-chip ' + r.lvl;
-        chip.textContent = LBL[r.lvl] + ' — استُهلك ' + Math.round(r.used * 100) + '%'; st.append(chip);
+        chip.textContent = LBL[r.lvl] + ' — استُهلك ' + Math.round(r.used * 100) + '%'; if (r.lvl === 'over') chip.prepend(warn()); st.append(chip);
         return tr;
       }));
     }
