@@ -141,6 +141,8 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .pz-upload-top .pz-upload-msg { flex-basis: 100%; text-align: end; }
 .pz-upload { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; }
 .pz-upload button { font: inherit; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-md); min-height: 2.4rem; cursor: pointer; font-weight: 600; }
+.pz-upload #up-btn { display: inline-flex; align-items: center; gap: 8px; }
+.pz-up-ic { width: 20px; height: 20px; color: #1d6f42; flex: none; }
 .pz-upload button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
 .pz-upload-msg { font-size: var(--cds-font-size-caption); line-height: 1.6; }
 .pz-upload-msg.ok { color: var(--color-ok); }
@@ -154,7 +156,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   <header class="pz-top">
     <div class="site-brand"><img src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()"><h1 id="title">روزنامة المباريات المؤجلة 2026-27</h1></div>
     <div class="pz-upload pz-upload-top">
-      <button type="button" id="up-btn">تحديث بيانات الأندية من ملف إكسل</button>
+      <button type="button" id="up-btn"><svg class="pz-up-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 18v-6M9 15l3-3 3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>اضغط لرفع ملف إكسل لتحديث البيانات</button>
       <button type="button" id="up-reset" hidden>الرجوع إلى البيانات الأصلية</button>
       <input type="file" id="up-file" accept=".xlsx" hidden>
       <span class="pz-upload-msg" id="up-msg"></span>
