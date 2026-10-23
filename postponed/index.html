@@ -157,7 +157,6 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     <div class="site-brand"><img src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()"><h1 id="title">روزنامة المباريات المؤجلة 2026-27</h1></div>
     <div class="pz-upload pz-upload-top">
       <button type="button" id="up-btn"><svg class="pz-up-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 18v-6M9 15l3-3 3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>اضغط لرفع ملف إكسل لتحديث البيانات</button>
-      <button type="button" id="up-reset" hidden>الرجوع إلى البيانات الأصلية</button>
       <input type="file" id="up-file" accept=".xlsx" hidden>
       <span class="pz-upload-msg" id="up-msg"></span>
     </div>
@@ -371,15 +370,8 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   }
   const upBtn = document.getElementById('up-btn'), upFile = document.getElementById('up-file'), upMsg = document.getElementById('up-msg');
   upBtn.addEventListener('click', () => upFile.click());
-  const resetBtn = document.getElementById('up-reset');
-  resetBtn.hidden = !uploaded;
   if (uploaded) { upMsg.className = 'pz-upload-msg ok'; upMsg.textContent = 'تعرض الصفحة آخر ملف رفعته على هذا الجهاز' + (uploadedName ? ': «' + uploadedName + '»' : '') + '.'; }
-  resetBtn.addEventListener('click', () => {
-    uploaded = null; uploadedName = '';
-    try { localStorage.removeItem('pz-teams'); } catch (e) {}
-    resetBtn.hidden = true; upMsg.className = 'pz-upload-msg'; upMsg.textContent = 'رجعت الصفحة إلى البيانات الأصلية.';
-    draw();
-  });
+
   upFile.addEventListener('change', async () => {
     const f = upFile.files && upFile.files[0]; if (!f) return;
     upMsg.className = 'pz-upload-msg'; upMsg.textContent = 'جاري قراءة الملف…';
@@ -390,7 +382,6 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       try { localStorage.setItem('pz-teams', JSON.stringify({name: f.name, at: TODAY, teams})); } catch (e) {}
       upMsg.className = 'pz-upload-msg ok';
       upMsg.textContent = 'تم التحديث من «' + f.name + '»: ' + teams.length + ' نادٍ في البطولات المشمولة' + (skipped ? ' (وتُركت ' + skipped + ' مباراة من بطولات غير موجودة في الروزنامة)' : '') + '. حُفظ التحديث على هذا الجهاز.';
-      resetBtn.hidden = false;
       draw();
     } catch (e) {
       upMsg.className = 'pz-upload-msg bad';
