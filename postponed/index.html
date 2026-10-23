@@ -227,7 +227,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
           <th>النادي</th>
           <th>المدينة</th>
           <th>المؤجلة له حتى الآن</th>
-          <th id="th-forced">جولات حتى نهاية ديسمبر لن تُلعب</th>
+          <th id="th-forced">جولات إضافية حتى نهاية ديسمبر لن تُلعب</th>
           <th id="th-left">المتبقي من الحد الأقصى*</th>
           <th>الحالة</th>
         </tr></thead>
@@ -301,7 +301,11 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       const jn = isJN(t.key, t.city);
       // their own list of dates, worked out from 1 January (the general list spends some gaps in November and December)
       const cap = capFrom(L, t.key, jn ? mode + '_jan' : mode, TODAY);
-      const forced = jn && TODAY < JAN ? roundsBefore(E, t.key, TODAY, JAN) : 0;
+      // rounds still to come before January, but never more than the season's rounds up to the end of December in total
+      // (the postponed count in the file may already include some of them)
+      const toDec = roundsBefore(E, t.key, '0000-01-01', JAN);
+      const forcedRaw = jn && TODAY < JAN ? roundsBefore(E, t.key, TODAY, JAN) : 0;
+      const forced = Math.max(0, Math.min(forcedRaw, toDec - Number(t.postponed)));
       const need = Number(t.postponed) + forced;
       const left = cap - need;
       const used = cap > 0 ? need / cap : 1;
