@@ -16,7 +16,6 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .site-top img{height:54px;width:auto}
 .dash-skeleton:empty{min-height:1.2em;background:var(--cds-chart-grid);border-radius:6px}
 </style></head><body><div id="dash-root">
-<div class="site-top"><img src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()"></div>
 <script>
 (function(){
   var store={}, fns=[], names=['summary','slots','events','grid','cols','teams'];
@@ -131,6 +130,10 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
 .pz-fail { display: flex; align-items: center; justify-content: center; gap: .4rem; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: 6rem; grid-column: 1 / -1; }
 .pz-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.site-brand { display: flex; align-items: center; gap: 12px; } .site-brand img { height: 54px; width: auto; }
+.pz-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-md); }
+.pz-upload-top { justify-content: flex-end; max-width: min(100%, 36rem); }
+.pz-upload-top .pz-upload-msg { flex-basis: 100%; text-align: end; }
 .pz-upload { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; }
 .pz-upload button { font: inherit; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-md); min-height: 2.4rem; cursor: pointer; font-weight: 600; }
 .pz-upload button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
@@ -143,8 +146,14 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 </style>
 
 <div class="pz" dir="rtl">
-  <header>
-    <h1 id="title">روزنامة المباريات المؤجلة 2026-27</h1>
+  <header class="pz-top">
+    <div class="site-brand"><img src="logo.png" alt="الاتحاد السعودي لكرة القدم" onerror="this.remove()"><h1 id="title">روزنامة المباريات المؤجلة 2026-27</h1></div>
+    <div class="pz-upload pz-upload-top">
+      <button type="button" id="up-btn">تحديث بيانات الأندية من ملف إكسل</button>
+      <button type="button" id="up-reset" hidden>الرجوع إلى البيانات الأصلية</button>
+      <input type="file" id="up-file" accept=".xlsx" hidden>
+      <span class="pz-upload-msg" id="up-msg"></span>
+    </div>
   </header>
 
   <h2 class="pz-modes-title">هناك خياران لحساب أقصى عدد من المباريات المؤجلة:</h2>
@@ -199,13 +208,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 
   <section class="pz-card" id="clubs">
     <h2 id="clubs-title">الأندية التي لها مباريات مؤجلة</h2>
-    <div class="pz-upload">
-      <button type="button" id="up-btn">تحديث بيانات الأندية من ملف إكسل</button>
-      <button type="button" id="up-reset" hidden>الرجوع إلى البيانات الأصلية</button>
-      <input type="file" id="up-file" accept=".xlsx" hidden>
-      <span class="pz-upload-msg" id="up-msg"></span>
-    </div>
-    <div class="pz-scroll" style="margin-top: var(--cds-gap-md);">
+    <div class="pz-scroll">
       <table class="pz-table pz-clubs" id="clubs-tbl" data-source="teams events slots">
         <thead><tr>
           <th id="th-comp">البطولة</th>
