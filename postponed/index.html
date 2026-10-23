@@ -422,18 +422,19 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     const tbody = document.querySelector('#tbl tbody');
     document.getElementById('t-all').setAttribute('aria-pressed', !jnView);
     document.getElementById('t-jn').setAttribute('aria-pressed', jnView);
-    document.getElementById('all-title').firstChild.textContent = 'الحد الأقصى للمباريات المؤجلة لكل فريق — كل البطولات' + (jnView ? ' (من يناير 2027)' : '') + '*';
+    document.getElementById('all-title').firstChild.textContent = 'الحد الأقصى للمباريات المؤجلة لكل فريق — ' + (jnView ? 'أندية جازان ونجران' : 'كل البطولات') + '*';
     document.getElementById('all-sub').textContent = jnView
-      ? 'لأندية جازان ونجران في تحت 18 وما دونها، لأنها لا تلعب قبل يناير: المواعيد محسوبة من 1 يناير 2027 — ويتحدّث تلقائياً كل يوم'
+      ? 'التغيير في البطولات تحت 18 وما دونها فقط: أنديتها لا تلعب قبل يناير، فمواعيدها محسوبة من 1 يناير 2027. وباقي البطولات كما هي — ويتحدّث تلقائياً كل يوم'
       : 'لضمان إقامة كل المباريات خلال الموسم — محسوب من اليوم ' + DMY(TODAY) + '، ويتحدّث تلقائياً كل يوم';
     if (!ok) tbody.replaceChildren();
     else tbody.replaceChildren(...comps.map(r => {
       const tr = document.createElement('tr'); tr.tabIndex = 0;
       tr.setAttribute('aria-selected', r.key === picked);
-      const sfx = jnView ? '_jan' : '';
+      const changed = jnView && UNDER18.has(r.key), sfx = changed ? '_jan' : '';
       const vals = [r.name, capFrom(L.data, r.key, 'gap' + sfx, TODAY), capFrom(L.data, r.key, 'every3' + sfx, TODAY)];
       vals.forEach((v, i) => {
         const td = document.createElement('td'); td.textContent = v;
+        if (i === 0 && changed) { const tg = document.createElement('span'); tg.className = 'pz-jn'; tg.textContent = 'من يناير'; td.append(tg); }
         if ((i === 1 && mode === 'gap') || (i === 2 && mode === 'every3')) td.className = 'on';
         tr.append(td);
       });
