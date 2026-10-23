@@ -150,11 +150,11 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   <h2 class="pz-modes-title">هناك خياران لحساب أقصى عدد من المباريات المؤجلة:</h2>
   <div class="pz-modes" id="modes">
     <div class="pz-mode" id="d-gap">
-      <b>الخيار الأول: مؤجلة واحدة بين كل جولتين</b>
+      <b>خيار 1: لعب مؤجلة واحدة بين كل جولتين</b>
       <span>في الفراغ بين جولتين متتاليتين للفريق تُلعب مباراة مؤجلة واحدة فقط، مع راحة 3 أيام على الأقل قبلها وبعدها. مثال: جولة يوم الخميس، والجولة التالية الخميس الذي بعده، فتُلعب بينهما مؤجلة واحدة يوم الأحد أو الاثنين. هذه الطريقة الأقرب للواقع.</span>
     </div>
     <div class="pz-mode" id="d-every3">
-      <b>الخيار الثاني: كل 3 أيام</b>
+      <b>خيار 2: لعب مباراة كل 3 أيام</b>
       <span>تُستغل كل الأيام الفارغة، فيلعب الفريق مباراة كل 3 أيام كلما أمكن، حتى لو صار بين جولتين أكثر من مؤجلة. مثال: إذا كان بين جولتين أسبوعان، فقد تُلعب بينهما 3 مؤجلات. ممكنة نظاماً لكنها مرهقة للاعبين، وتعطي الحد الأقصى النظري.</span>
     </div>
   </div>
@@ -165,8 +165,8 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       <table class="pz-table" id="tbl" data-source="summary slots">
         <thead><tr>
           <th>البطولة</th>
-          <th>مؤجلة واحدة بين كل جولتين</th>
-          <th>كل 3 أيام</th>
+          <th>خيار 1: لعب مؤجلة واحدة بين كل جولتين</th>
+          <th>خيار 2: لعب مباراة كل 3 أيام</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -178,20 +178,20 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     <div class="pz-field">
       <span>طريقة الحساب</span>
       <div class="pz-seg" role="group" aria-label="طريقة الحساب">
-        <button type="button" id="m-gap" aria-pressed="true">مؤجلة واحدة بين كل جولتين</button>
-        <button type="button" id="m-every3" aria-pressed="false">كل 3 أيام</button>
+        <button type="button" id="m-gap" aria-pressed="true">خيار 1: لعب مؤجلة واحدة بين كل جولتين</button>
+        <button type="button" id="m-every3" aria-pressed="false">خيار 2: لعب مباراة كل 3 أيام</button>
       </div>
     </div>
   </div>
 
   <section class="pz-hero" id="numbers">
     <div class="pz-card pz-kpi main">
-      <span class="lbl" id="k-lbl">الحد الأقصى للمؤجلات — مؤجلة واحدة بين كل جولتين</span>
+      <span class="lbl" id="k-lbl">الحد الأقصى للمؤجلات — لعب مؤجلة واحدة بين كل جولتين</span>
       <span class="big dash-skeleton" id="k-total" data-source="slots">—</span>
       <span class="txt">هو أقصى عدد من المباريات المؤجلة يمكن لعبها لفريق واحد في <b id="k-name">—</b>، من اليوم <b id="k-today">—</b> حتى نهاية الموسم.</span>
     </div>
     <div class="pz-card pz-kpi">
-      <span class="lbl" id="o-lbl">الحد الأقصى بالطريقة الأخرى (كل 3 أيام)</span>
+      <span class="lbl" id="o-lbl">الحد الأقصى بالخيار الآخر (لعب مباراة كل 3 أيام)</span>
       <span class="mid dash-skeleton" id="o-total" data-source="slots">—</span>
       <span class="txt" id="o-txt">مرهق للاعبين، لكنه ممكن نظاماً.</span>
     </div>
@@ -240,7 +240,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       <li><b>أيام الجولة:</b> لا تُلعب مؤجلة في يوم من أيام جولة الدوري. وإذا امتدت الجولة أكثر من يوم، يُفترض أن الفريق يلعب مباراة الجولة في أنسب يوم منها.</li>
       <li><b>الأيام الممنوعة:</b> فترة أيام فيفا كاملة من أولها إلى آخرها (ما عدا الدرجة الأولى تحت 15 إلى تحت 18، فهي تلعب في أيام فيفا عادي)، ومعسكرات المنتخبات وبطولاتها المكتوبة في ورقة البطولة نفسها. ويُستثنى أي حدث وضعت الروزنامة جولات دوري أثناءه، لأن ذلك يعني أنه لا يوقف هذا الدوري (مثل كأس آسيا في الدرجة الثانية).</li>
       <li><b>رمضان والعيد والحج:</b> لم تُستبعد أيامها، لأن الروزنامة نفسها وضعت جولات فيها.</li>
-      <li><b>الطريقتان:</b> «مؤجلة واحدة بين كل جولتين» تعني مؤجلة واحدة على الأكثر في كل فراغ بين التزامين متتاليين للفريق، وهي الأقرب للواقع. «كل 3 أيام» تستغل كل الأيام الفارغة ويلعب فيها الفريق كل ثلاثة أيام، وهي ممكنة نظاماً لكنها مرهقة.</li>
+      <li><b>الطريقتان:</b> «لعب مؤجلة واحدة بين كل جولتين» تعني مؤجلة واحدة على الأكثر في كل فراغ بين التزامين متتاليين للفريق، وهي الأقرب للواقع. «لعب مباراة كل 3 أيام» تستغل كل الأيام الفارغة ويلعب فيها الفريق كل ثلاثة أيام، وهي ممكنة نظاماً لكنها مرهقة.</li>
       <li><b>دوري روشن للمحترفين:</b> غير مشمول في هذا الحساب.</li>
       <li><b>الخلايا الملوّنة بلا كتابة:</b> في ملفك خلايا ملوّنة دون كتابة (مثل امتداد أيام فيفا، أو جولة تمتد لآخر الشهر)، وقد حُسبت كما يدل لونها.</li>
       <li><b>التبديل:</b> إذا أُجّلت مباراة جولة ولُعبت في موعدها مباراة مؤجلة سابقة، فهذا مسموح ولا يغيّر المجموع، لأن المباراة التي أُجّلت تحتاج هي أيضاً موعداً لاحقاً. فالرقم هو أقصى عدد من المباريات المؤجلة يمكن أن يكون معلّقاً للفريق في الوقت نفسه.</li>
@@ -265,7 +265,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   const now = new Date();
   const TODAY = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
   const DMY = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
-  const MODE_AR = {gap: 'مؤجلة واحدة بين كل جولتين', every3: 'كل 3 أيام'};
+  const MODE_AR = {gap: 'لعب مؤجلة واحدة بين كل جولتين', every3: 'لعب مباراة كل 3 أيام'};
   let picked = 'ALL', mode = 'gap', uploaded = null, uploadedName = '';
   try { const s = JSON.parse(localStorage.getItem('pz-teams') || 'null'); if (s && Array.isArray(s.teams)) { uploaded = s.teams; uploadedName = s.name || ''; } } catch (e) {}
 
@@ -431,7 +431,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     const kTotal = document.getElementById('k-total'), oTotal = document.getElementById('o-total');
     const other = mode === 'gap' ? 'every3' : 'gap';
     document.getElementById('k-lbl').textContent = 'الحد الأقصى للمؤجلات — ' + MODE_AR[mode];
-    document.getElementById('o-lbl').textContent = 'الحد الأقصى بالطريقة الأخرى (' + MODE_AR[other] + ')';
+    document.getElementById('o-lbl').textContent = 'الحد الأقصى بالخيار الآخر (' + MODE_AR[other] + ')';
     document.getElementById('o-txt').textContent = mode === 'gap' ? 'مرهق للاعبين، لكنه ممكن نظاماً.' : 'الأقرب للواقع: مؤجلة واحدة في كل فراغ.';
     document.getElementById('k-today').textContent = DMY(TODAY);
     if (ok && row) {
