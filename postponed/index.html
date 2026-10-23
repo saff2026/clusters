@@ -43,6 +43,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .pz-seg button:focus-visible, .pz select:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
 .pz-card h2.pz-h2-sub small { display: block; font-size: var(--cds-font-size-body); font-weight: 500; color: var(--color-fg-muted); margin-top: 2px; }
 .pz-modes-title { font-size: var(--cds-font-size-heading); font-weight: 700; margin: 0 0 calc(-1 * var(--cds-gap-md)); }
+.pz-jn-seg { margin-bottom: var(--cds-gap-md); }
 .pz-modes { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
 .pz-mode { display: grid; gap: var(--cds-gap-xs); padding: var(--cds-pad-md) var(--cds-pad-lg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-panel); line-height: 1.7; font-size: var(--cds-font-size-body); }
 .pz-mode b { font-weight: 700; }
@@ -175,13 +176,19 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   </div>
 
   <section class="pz-card" id="all">
-    <h2 class="pz-h2-sub">الحد الأقصى للمباريات المؤجلة لكل فريق — كل البطولات*<small id="all-sub">لضمان إقامة كل المباريات خلال الموسم</small></h2>
+    <h2 class="pz-h2-sub" id="all-title">الحد الأقصى للمباريات المؤجلة لكل فريق — كل البطولات*<small id="all-sub">لضمان إقامة كل المباريات خلال الموسم</small></h2>
+    <div class="pz-seg pz-jn-seg" role="group" aria-label="الأندية">
+      <button type="button" id="t-all" aria-pressed="true">كل الأندية</button>
+      <button type="button" id="t-jn" aria-pressed="false">أندية جازان ونجران (تحت 18 وما دونها)</button>
+    </div>
     <div class="pz-scroll">
-      <table class="pz-table" id="tbl" data-source="summary slots">
+      <table class="pz-table" id="tbl" data-source="summary slots events">
         <thead><tr>
           <th>البطولة</th>
           <th>خيار 1: لعب مؤجلة واحدة بين كل جولتين</th>
           <th>خيار 2: لعب مباراة كل 3 أيام</th>
+          <th id="th-dec" style="display:none">جولات حتى نهاية ديسمبر لن تُلعب</th>
+          <th id="th-net" style="display:none">يبقى للمؤجلات السابقة</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -275,13 +282,15 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   const TODAY = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
   const DMY = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
   const MODE_AR = {gap: 'لعب مؤجلة واحدة بين كل جولتين', every3: 'لعب مباراة كل 3 أيام'};
-  let picked = 'ALL', mode = 'gap', uploaded = null, uploadedName = '';
+  let picked = 'ALL', mode = 'gap', uploaded = null, jnView = false, uploadedName = '';
   try { const s = JSON.parse(localStorage.getItem('pz-teams') || 'null'); if (s && Array.isArray(s.teams)) { uploaded = s.teams; uploadedName = s.name || ''; } } catch (e) {}
 
   const pick = document.getElementById('pick');
   pick.addEventListener('change', () => { picked = pick.value; draw(); });
   document.getElementById('m-gap').addEventListener('click', () => { mode = 'gap'; draw(); });
   document.getElementById('m-every3').addEventListener('click', () => { mode = 'every3'; draw(); });
+  document.getElementById('t-all').addEventListener('click', () => { jnView = false; draw(); });
+  document.getElementById('t-jn').addEventListener('click', () => { jnView = true; draw(); });
 
   // ---- live counts: a proposed date counts only from today on ----
   const slotDates = (L, key, m) => L.filter(s => s.key === key && s.mode === m).map(s => String(s.date).slice(0, 10)).sort();
@@ -401,7 +410,6 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     const row = comps.find(r => r.key === picked) || null;
     document.getElementById('m-gap').setAttribute('aria-pressed', mode === 'gap');
     document.getElementById('m-every3').setAttribute('aria-pressed', mode === 'every3');
-    document.getElementById('all-sub').textContent = 'لضمان إقامة كل المباريات خلال الموسم — محسوب من اليوم ' + DMY(TODAY) + '، ويتحدّث تلقائياً كل يوم';
 
     // picker
     if (S.status === 'ok' && pick.options.length !== comps.length + 1) {
@@ -412,15 +420,31 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
     document.getElementById('numbers').style.display = isAll ? 'none' : '';
     document.getElementById('calendar').style.display = isAll ? 'none' : '';
 
-    // all competitions table (live)
+    // all competitions table (live); the Jazan/Najran view counts only from January for U18 and younger
     const tbody = document.querySelector('#tbl tbody');
-    if (!ok) tbody.replaceChildren();
-    else tbody.replaceChildren(...comps.map(r => {
+    document.getElementById('t-all').setAttribute('aria-pressed', !jnView);
+    document.getElementById('t-jn').setAttribute('aria-pressed', jnView);
+    document.getElementById('th-dec').style.display = jnView && TODAY < JAN ? '' : 'none';
+    document.getElementById('th-net').style.display = jnView ? '' : 'none';
+    document.getElementById('th-net').textContent = 'يبقى للمؤجلات السابقة (' + (mode === 'gap' ? 'خيار 1' : 'خيار 2') + ')';
+    document.getElementById('all-title').firstChild.textContent = 'الحد الأقصى للمباريات المؤجلة لكل فريق — ' + (jnView ? 'أندية جازان ونجران (تحت 18 وما دونها)' : 'كل البطولات') + '*';
+    document.getElementById('all-sub').textContent = jnView
+      ? 'لا تلعب قبل يناير 2027، فتُحسب مواعيدها من 1 يناير، وجولاتها حتى نهاية ديسمبر تُضاف إلى مؤجلاتها — ويتحدّث تلقائياً كل يوم'
+      : 'لضمان إقامة كل المباريات خلال الموسم — محسوب من اليوم ' + DMY(TODAY) + '، ويتحدّث تلقائياً كل يوم';
+    if (!ok || (jnView && E.status !== 'ok')) tbody.replaceChildren();
+    else tbody.replaceChildren(...comps.filter(r => !jnView || UNDER18.has(r.key)).map(r => {
       const tr = document.createElement('tr'); tr.tabIndex = 0;
       tr.setAttribute('aria-selected', r.key === picked);
-      [r.name, capFrom(L.data, r.key, 'gap', TODAY), capFrom(L.data, r.key, 'every3', TODAY)].forEach((v, i) => {
+      const sfx = jnView ? '_jan' : '';
+      const vals = [r.name, capFrom(L.data, r.key, 'gap' + sfx, TODAY), capFrom(L.data, r.key, 'every3' + sfx, TODAY)];
+      const dec = jnView && TODAY < JAN ? roundsBefore(E.data, r.key, TODAY, JAN) : 0;
+      if (jnView && TODAY < JAN) vals.push(dec);
+      const net = vals[mode === 'gap' ? 1 : 2] - dec;
+      if (jnView) vals.push(net < 0 ? 'يتجاوز بـ ' + (-net) : net);
+      vals.forEach((v, i) => {
         const td = document.createElement('td'); td.textContent = v;
         if ((i === 1 && mode === 'gap') || (i === 2 && mode === 'every3')) td.className = 'on';
+        if (jnView && i === vals.length - 1) { td.style.fontWeight = '700'; if (net <= 0) td.style.color = 'var(--color-bad)'; }
         tr.append(td);
       });
       const go = () => { picked = r.key; draw(); };
